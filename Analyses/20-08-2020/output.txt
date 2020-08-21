@@ -1,0 +1,2154 @@
+
+> #### Description ####
+> # rsbtype
+> # 1 = unprotected sex
+> # 2 = multiple life partners 
+> # 3 = hazardous sex
+> # 4 = sexual initiation 
+> # id = Study Number
+> # article = Author(s) and year
+> # ss = total study sample size 
+> # age.m = age mean 
+> # age.sd = age standard deviation 
+> # female = percentage of sample female 
+> # caucasian = percentage of sample caucasian 
+> # r = correlation coefficient 
+> # var = variance
+> # n = sample size utilized 
+> # Z = Fisher's Z transformation 
+> # Z.var = Fisher's Z variance transformation 
+> # back.transform = Fisher's Z back to r 
+> 
+> 
+> ######################## 1 - UNPROTECTED SEX ######################## 
+> 
+> #### Data Prep ####
+> 
+> # pull data 
+> fullset = read.csv("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/dataset.csv", header = T, sep = ",")
+
+> # set working directoy to subfolder - holds plots 
+> setwd("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/1_UnprotectedSex")
+
+> # subset RSB
+> ds = subset(fullset, rsbtype == 1)
+
+> # Fisher's Z transformation
+> ds$Z <- .5*log((1 + ds$r) / (1 - ds$r))
+
+> # Variance of Fisher's Z
+> ds$Z.var <- 1 / (ds$n - 3)
+
+> ####  Forest Plot ####
+> 
+> # Create and print default forest plot
+> # yi: effect size
+> # vi: effect size variance
+> # data: data set 
+> 
+> forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
+
+> forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
+
+> ##################### Multivariate/Dependency Analyses ##################### 
+> 
+> #### RE model ####
+> # RE model in robumeta with correlational weights
+> model_rve_c <- robu(Z ~ 1, 
++                     data = ds,
++                     studynum = id,
++                     var.eff.size = Z.var, 
++                     modelweights = "CORR",
++                     rho = .80)
+
+> model_rve_c
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ 1 
+
+Number of studies = 30 
+Number of outcomes = 34 (min = 1 , mean = 1.13 , median = 1 , max = 2 )
+Rho = 0.8 
+I.sq = 83.75018 
+Tau.sq = 0.01433706 
+
+               Estimate StdErr t-value  dfs  P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept.    0.131 0.0314    4.17 27.9 0.000265   0.0667    0.195 ***
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> # Checking model sensitivity of correlational weights (i.e., choice of rho)
+> sensitivity(model_rve_c)
+RVE: Correlated Effects Model with Small-Sample Corrections 
+Model: Z ~ 1 
+
+Sensitivity Analysis 
+
+                          Rho = 0 Rho = 0.2 Rho = 0.4 Rho = 0.6 Rho = 0.8 Rho = 1
+ X.Intercept. Coefficient 0.1310  0.1310    0.1310    0.1310    0.1310    0.1310 
+              Std. Error  0.0314  0.0314    0.0314    0.0314    0.0314    0.0314 
+ Tau.sq       Estimate    0.0143  0.0143    0.0143    0.0143    0.0143    0.0143 
+
+> # forest plot
+> jpeg('Forest_Plot.jpg', width = 610, height = 880)
+
+> forest.robu(model_rve_c,
++             es.lab = "rsbtype",
++             study.lab = "id")
+
+> dev.off()
+RStudioGD 
+        2 
+
+> #### multivariate moderator ####
+> 
+> # Conditional RE model in robumeta with one moderator using correlational weights 
+> # gender
+> 
+> model_rve_c_female <- robu(Z ~ female, 
++                            data = ds,
++                            studynum = id,
++                            var.eff.size = Z.var, 
++                            modelweights = "CORR",
++                            rho = .80)
+
+> model_rve_c_female
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ female 
+
+Number of studies = 30 
+Number of outcomes = 34 (min = 1 , mean = 1.13 , median = 1 , max = 2 )
+Rho = 0.8 
+I.sq = 84.26998 
+Tau.sq = 0.01520395 
+
+               Estimate   StdErr t-value  dfs  P(|t|>)  95% CI.L 95% CI.U Sig
+1 X.Intercept. 0.102892 0.025399    4.05 15.7 0.000955  0.048976  0.15681 ***
+2       female 0.000724 0.000606    1.20 12.9 0.253307 -0.000585  0.00203    
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> # Conditional RE model in robumeta with one moderator using correlational weights 
+> # race
+> 
+> model_rve_c_caucasian <- robu(Z ~ caucasian, 
++                               data = ds,
++                               studynum = id,
++                               var.eff.size = Z.var, 
++                               modelweights = "CORR",
++                               rho = .80)
+
+> model_rve_c_caucasian
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ caucasian 
+
+Number of studies = 22 
+Number of outcomes = 26 (min = 1 , mean = 1.18 , median = 1 , max = 2 )
+Rho = 0.8 
+I.sq = 71.20305 
+Tau.sq = 0.005844114 
+
+               Estimate   StdErr t-value  dfs P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept. 0.098956 0.037635   2.629 6.02   0.039  0.00694  0.19097  **
+2    caucasian 0.000338 0.000667   0.507 8.50   0.625 -0.00118  0.00186    
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> # Conditional RE model in robumeta with one moderator using correlational weights 
+> # age
+> 
+> model_rve_c_age <- robu(Z ~ age.m, 
++                         data = ds,
++                         studynum = id,
++                         var.eff.size = Z.var, 
++                         modelweights = "CORR",
++                         rho = .80)
+
+> model_rve_c_age
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ age.m 
+
+Number of studies = 24 
+Number of outcomes = 28 (min = 1 , mean = 1.17 , median = 1 , max = 2 )
+Rho = 0.8 
+I.sq = 27.17454 
+Tau.sq = 0.001107716 
+
+               Estimate  StdErr t-value  dfs P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept.  -0.1486 0.15566  -0.954 9.51   0.364 -0.49784   0.2007    
+2        age.m   0.0161 0.00916   1.754 9.75   0.111 -0.00441   0.0365    
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> ##################### INDEPENDENT RE MODEL ##################### 
+> 
+> #### RE Model Full Model #### 
+> RE.model <- rma.uni(yi = Z, vi = Z.var, data = ds, method = "REML")
+
+> RE.model
+
+Random-Effects Model (k = 34; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0299 (SE = 0.0086)
+tau (square root of estimated tau^2 value):      0.1730
+I^2 (total heterogeneity / total variability):   91.78%
+H^2 (total variability / sampling variability):  12.16
+
+Test for Heterogeneity:
+Q(df = 33) = 180.9066, p-val < .0001
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub 
+  0.1336  0.0321  4.1628  <.0001  0.0707  0.1965  *** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> #### back transformation ####
+> RE_r <- (exp(2*RE.model$beta) - 1) / (exp(2*RE.model$beta) + 1)
+
+> RE_r
+             [,1]
+intrcpt 0.1327938
+
+> #### Sensitivity Analysis ####
+> # Print various influence point measures
+> options(max.print=1000000)
+
+> influence(RE.model)
+
+   rstudent  dffits cook.d  cov.r tau2.del   QE.del    hat weight    dfbs inf 
+1    0.2204  0.0331 0.0012 1.0907   0.0318 174.6502 0.0340 3.3975  0.0332     
+2   -0.2361 -0.0495 0.0026 1.0834   0.0317 180.4456 0.0308 3.0808 -0.0495     
+3   -0.1782 -0.0385 0.0016 1.0815   0.0316 180.7202 0.0297 2.9674 -0.0385     
+4   -0.8346 -0.1494 0.0227 1.0489   0.0305 175.7177 0.0300 2.9982 -0.1494     
+5   -1.3292 -0.2396 0.0551 0.9953   0.0286 143.8272 0.0328 3.2837 -0.2392     
+6    0.1537  0.0202 0.0004 1.0895   0.0318 180.1600 0.0329 3.2852  0.0203     
+7    0.0394 -0.0009 0.0000 1.0911   0.0319 180.8149 0.0329 3.2852 -0.0009     
+8    9.1813  1.1706 0.5714 0.2180   0.0037  77.9478 0.0228 2.2836  1.6286   * 
+9   -0.5266 -0.0985 0.0101 1.0704   0.0313 178.8075 0.0301 3.0097 -0.0985     
+10   0.6377  0.1046 0.0112 1.0564   0.0309 178.4999 0.0282 2.8164  0.1046     
+11   0.3184  0.0499 0.0026 1.0796   0.0315 179.7054 0.0310 3.0958  0.0500     
+12  -0.2140 -0.0408 0.0017 1.0686   0.0314 180.7642 0.0251 2.5084 -0.0407     
+13  -0.3131 -0.0565 0.0033 1.0665   0.0313 180.5828 0.0251 2.5084 -0.0563     
+14   0.1495  0.0191 0.0004 1.0844   0.0317 180.6051 0.0309 3.0916  0.0191     
+15   0.2128  0.0315 0.0010 1.0894   0.0318 178.7546 0.0334 3.3404  0.0316     
+16  -0.0157 -0.0097 0.0001 1.0764   0.0316 180.9065 0.0274 2.7363 -0.0096     
+17  -0.6867 -0.1286 0.0170 1.0636   0.0310 175.1161 0.0317 3.1686 -0.1287     
+18   0.1693  0.0230 0.0006 1.0873   0.0318 180.3072 0.0322 3.2169  0.0230     
+19  -0.4144 -0.0822 0.0071 1.0808   0.0315 178.3926 0.0322 3.2169 -0.0823     
+20  -0.1300 -0.0318 0.0011 1.0899   0.0318 180.6728 0.0326 3.2553 -0.0319     
+21   0.2830  0.0392 0.0016 1.0633   0.0312 180.5966 0.0242 2.4173  0.0390     
+22  -0.6279 -0.0810 0.0066 1.0328   0.0305 180.2405 0.0151 1.5054 -0.0806     
+23  -0.0725 -0.0209 0.0005 1.0875   0.0318 180.8748 0.0315 3.1451 -0.0209     
+24  -0.3752 -0.0687 0.0049 1.0693   0.0313 180.3163 0.0269 2.6905 -0.0686     
+25  -0.3239 -0.0604 0.0038 1.0709   0.0314 180.4739 0.0269 2.6905 -0.0603     
+26  -0.7110 -0.1223 0.0153 1.0528   0.0308 178.7033 0.0269 2.6905 -0.1221     
+27   0.3108  0.0475 0.0024 1.0760   0.0315 180.1267 0.0294 2.9407  0.0475     
+28  -0.2319 -0.0478 0.0024 1.0804   0.0316 180.5729 0.0297 2.9654 -0.0478     
+29  -0.3916 -0.0747 0.0058 1.0750   0.0314 179.9319 0.0294 2.9407 -0.0747     
+30  -0.2845 -0.0565 0.0033 1.0785   0.0316 180.4123 0.0294 2.9407 -0.0565     
+31   0.5030  0.0860 0.0077 1.0743   0.0313 175.4967 0.0325 3.2544  0.0862     
+32   0.1530  0.0200 0.0004 1.0886   0.0318 180.3059 0.0325 3.2517  0.0201     
+33  -0.5359 -0.0998 0.0103 1.0695   0.0312 178.8217 0.0299 2.9913 -0.0998     
+34  -0.1419 -0.0326 0.0011 1.0837   0.0317 180.7794 0.0303 3.0296 -0.0326     
+
+
+> # Plots of influence measures
+> plot(influence(RE.model))
+
+> leave1out(RE.model)
+
+   estimate     se   zval   pval  ci.lb  ci.ub        Q     Qp   tau2      I2      H2 
+1    0.1325 0.0335 3.9533 0.0001 0.0668 0.1982 174.6502 0.0000 0.0318 90.8896 10.9764 
+2    0.1352 0.0334 4.0481 0.0001 0.0697 0.2007 180.4456 0.0000 0.0317 92.2333 12.8755 
+3    0.1348 0.0334 4.0408 0.0001 0.0694 0.2003 180.7202 0.0000 0.0316 92.2757 12.9461 
+4    0.1384 0.0329 4.2117 0.0000 0.0740 0.2028 175.7177 0.0000 0.0305 92.0087 12.5135 
+5    0.1411 0.0320 4.4077 0.0000 0.0784 0.2039 143.8272 0.0000 0.0286 91.2054 11.3705 
+6    0.1329 0.0335 3.9683 0.0001 0.0673 0.1986 180.1600 0.0000 0.0318 92.0021 12.5033 
+7    0.1336 0.0335 3.9861 0.0001 0.0679 0.1993 180.8149 0.0000 0.0319 92.0148 12.5232 
+8    0.1093 0.0150 7.2966 0.0000 0.0800 0.1387  77.9478 0.0000 0.0037 58.2553  2.3955 
+9    0.1368 0.0332 4.1206 0.0000 0.0717 0.2019 178.8075 0.0000 0.0313 92.1726 12.7756 
+10   0.1302 0.0330 3.9471 0.0001 0.0655 0.1948 178.4999 0.0000 0.0309 92.1311 12.7083 
+11   0.1319 0.0333 3.9571 0.0001 0.0666 0.1973 179.7054 0.0000 0.0315 92.1950 12.8123 
+12   0.1349 0.0332 4.0672 0.0000 0.0699 0.1999 180.7642 0.0000 0.0314 92.2886 12.9678 
+13   0.1354 0.0331 4.0866 0.0000 0.0705 0.2004 180.5828 0.0000 0.0313 92.2726 12.9410 
+14   0.1330 0.0334 3.9787 0.0001 0.0675 0.1984 180.6051 0.0000 0.0317 92.2341 12.8769 
+15   0.1325 0.0335 3.9572 0.0001 0.0669 0.1982 178.7546 0.0000 0.0318 91.7439 12.1123 
+16   0.1339 0.0333 4.0218 0.0001 0.0686 0.1992 180.9065 0.0000 0.0316 92.3049 12.9953 
+17   0.1378 0.0331 4.1631 0.0000 0.0729 0.2026 175.1161 0.0000 0.0310 92.0077 12.5120 
+18   0.1328 0.0335 3.9695 0.0001 0.0672 0.1984 180.3072 0.0000 0.0318 92.1318 12.7093 
+19   0.1363 0.0334 4.0852 0.0000 0.0709 0.2017 178.3926 0.0000 0.0315 92.0813 12.6284 
+20   0.1346 0.0335 4.0187 0.0001 0.0690 0.2003 180.6728 0.0000 0.0318 92.0821 12.6297 
+21   0.1323 0.0331 3.9984 0.0001 0.0675 0.1972 180.5966 0.0000 0.0312 92.2629 12.9247 
+22   0.1362 0.0326 4.1762 0.0000 0.0723 0.2001 180.2405 0.0000 0.0305 92.1329 12.7112 
+23   0.1343 0.0335 4.0125 0.0001 0.0687 0.1999 180.8748 0.0000 0.0318 92.2160 12.8468 
+24   0.1358 0.0332 4.0933 0.0000 0.0708 0.2009 180.3163 0.0000 0.0313 92.2610 12.9215 
+25   0.1356 0.0332 4.0821 0.0000 0.0705 0.2006 180.4739 0.0000 0.0314 92.2731 12.9418 
+26   0.1375 0.0329 4.1775 0.0000 0.0730 0.2021 178.7033 0.0000 0.0308 92.1332 12.7116 
+27   0.1320 0.0333 3.9663 0.0001 0.0668 0.1973 180.1267 0.0000 0.0315 92.2440 12.8932 
+28   0.1352 0.0334 4.0519 0.0001 0.0698 0.2005 180.5729 0.0000 0.0316 92.2683 12.9338 
+29   0.1360 0.0333 4.0886 0.0000 0.0708 0.2012 179.9319 0.0000 0.0314 92.2362 12.8803 
+30   0.1354 0.0333 4.0641 0.0000 0.0701 0.2008 180.4123 0.0000 0.0316 92.2630 12.9249 
+31   0.1308 0.0333 3.9316 0.0001 0.0656 0.1960 175.4967 0.0000 0.0313 91.9622 12.4412 
+32   0.1329 0.0335 3.9700 0.0001 0.0673 0.1985 180.3059 0.0000 0.0318 92.0797 12.6258 
+33   0.1368 0.0332 4.1236 0.0000 0.0718 0.2019 178.8217 0.0000 0.0312 92.1739 12.7777 
+34   0.1347 0.0334 4.0309 0.0001 0.0692 0.2001 180.7794 0.0000 0.0317 92.2645 12.9275 
+
+
+> #### Publication Bias ####
+> 
+> #Funnel Plots 
+> 
+> par(mfrow = c(1,1))
+
+> # Funnel plot w/ SE as vertical axis
+> funnel(RE.model)
+
+> # Egger's Regression Test
+> regtest(x = ds$Z, vi = ds$Z.var, model = "lm")
+
+Regression Test for Funnel Plot Asymmetry
+
+model:     weighted regression with multiplicative dispersion
+predictor: standard error
+
+test for funnel plot asymmetry: t = -0.1131, df = 32, p = 0.9107
+
+
+> # Basic trim-and-fill code
+> trimfill(RE.model, side = "right", verbose = T)
+
+Iteration: 1    missing = 6   beta = 0.1336
+Iteration: 2    missing = 11  beta = 0.1643
+Iteration: 3    missing = 14  beta = 0.1889
+Iteration: 4    missing = 15  beta = 0.2058
+Iteration: 5    missing = 15  beta = 0.2117
+
+Estimated number of missing studies on the right side: 15 (SE = 3.4081)
+
+Random-Effects Model (k = 49; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0356 (SE = 0.0084)
+tau (square root of estimated tau^2 value):      0.1888
+I^2 (total heterogeneity / total variability):   92.17%
+H^2 (total variability / sampling variability):  12.77
+
+Test for Heterogeneity:
+Q(df = 48) = 405.1710, p-val < .0001
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub 
+  0.2101  0.0290  7.2377  <.0001  0.1532  0.2670  *** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> trimfill(RE.model, side = "left", verbose = T)
+
+Iteration: 1    missing = 0   beta = 0.1336
+
+Estimated number of missing studies on the left side: 0 (SE = 1.7225)
+
+Random-Effects Model (k = 34; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0299 (SE = 0.0086)
+tau (square root of estimated tau^2 value):      0.1730
+I^2 (total heterogeneity / total variability):   91.78%
+H^2 (total variability / sampling variability):  12.16
+
+Test for Heterogeneity:
+Q(df = 33) = 180.9066, p-val < .0001
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub 
+  0.1336  0.0321  4.1628  <.0001  0.0707  0.1965  *** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> # Plot both versions of trim-and-fill (optional)
+> par(mfrow = c(2,1))
+
+> funnel(trimfill(RE.model, side = "right"), main = "Right-Side Imputation")
+
+> funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
+
+> # Fail safe N 
+> fsn(yi = Z, vi = Z.var, data = ds)
+
+Fail-safe N Calculation Using the Rosenthal Approach
+
+Observed Significance Level: <.0001
+Target Significance Level:   0.05
+
+Fail-safe N: 2187
+
+
+> # #### Gender Moderator ####
+> # # % female 
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
+> # gender_MM_RE
+> # 
+> # #### Caucasian Moderator ####
+> # # % Caucasian 
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
+> # caucasian_MM_RE
+> # 
+> # #### Age Moderator ####
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
+> # age_MM_RE
+> 
+> #### EXTRA: Back Transform ####
+> ds$back.transform <- (exp(2*ds$Z) - 1) / (exp(2*ds$Z) + 1)
+
+> #### Clean evironment #### 
+> rm(list = ls())
+
+> ######################## 2 - MULTIPLE LIFETIME PARTNERS ######################## 
+> 
+> #### Data Prep ####
+> 
+> # pull data 
+> fullset = read.csv("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/dataset.csv", header = T, sep = ",")
+
+> # set working directoy to subfolder - holds plots 
+> setwd("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/2_MultipleLTPartners")
+
+> # subset RSB
+> ds = subset(fullset, rsbtype == 2)
+
+> # Fisher's Z transformation
+> ds$Z <- .5*log((1 + ds$r) / (1 - ds$r))
+
+> # Variance of Fisher's Z
+> ds$Z.var <- 1 / (ds$n - 3)
+
+> ####  Forest Plot ####
+> 
+> # Create and print default forest plot
+> # yi: effect size
+> # vi: effect size variance
+> # data: data set 
+> 
+> forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
+
+> forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
+
+> ##################### Multivariate/Dependency Analyses ##################### 
+> 
+> #### RE model ####
+> # RE model in robumeta with correlational weights
+> model_rve_c <- robu(Z ~ 1, 
++                     data = ds,
++                     studynum = id,
++                     var.eff.size = Z.var, 
++                     modelweights = "CORR",
++                     rho = .80)
+
+> model_rve_c
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ 1 
+
+Number of studies = 18 
+Number of outcomes = 21 (min = 1 , mean = 1.17 , median = 1 , max = 3 )
+Rho = 0.8 
+I.sq = 69.78885 
+Tau.sq = 0.004988423 
+
+               Estimate StdErr t-value  dfs     P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept.    0.199 0.0222    8.98 15.8 0.000000132    0.152    0.246 ***
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> # Checking model sensitivity of correlational weights (i.e., choice of rho)
+> sensitivity(model_rve_c)
+RVE: Correlated Effects Model with Small-Sample Corrections 
+Model: Z ~ 1 
+
+Sensitivity Analysis 
+
+                          Rho = 0 Rho = 0.2 Rho = 0.4 Rho = 0.6 Rho = 0.8 Rho = 1
+ X.Intercept. Coefficient 0.19919 0.19919   0.19919   0.19919   0.19919   0.19919
+              Std. Error  0.02219 0.02219   0.02219   0.02219   0.02219   0.02219
+ Tau.sq       Estimate    0.00499 0.00499   0.00499   0.00499   0.00499   0.00499
+
+> # forest plot
+> jpeg('Forest_Plot.jpg', width = 610, height = 880)
+
+> forest.robu(model_rve_c,
++             es.lab = "rsbtype",
++             study.lab = "id")
+
+> dev.off()
+RStudioGD 
+        2 
+
+> #### multivariate moderator ####
+> 
+> # Conditional RE model in robumeta with one moderator using correlational weights 
+> # gender
+> 
+> model_rve_c_female <- robu(Z ~ female, 
++                            data = ds,
++                            studynum = id,
++                            var.eff.size = Z.var, 
++                            modelweights = "CORR",
++                            rho = .80)
+
+> model_rve_c_female
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ female 
+
+Number of studies = 18 
+Number of outcomes = 21 (min = 1 , mean = 1.17 , median = 1 , max = 3 )
+Rho = 0.8 
+I.sq = 70.56313 
+Tau.sq = 0.005182222 
+
+               Estimate   StdErr t-value  dfs P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept. 0.173231 0.048543   3.569 6.82 0.00951  0.05784  0.28862 ***
+2       female 0.000466 0.000672   0.693 9.85 0.50407 -0.00103  0.00197    
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> # Conditional RE model in robumeta with one moderator using correlational weights 
+> # race
+> 
+> model_rve_c_caucasian <- robu(Z ~ caucasian, 
++                               data = ds,
++                               studynum = id,
++                               var.eff.size = Z.var, 
++                               modelweights = "CORR",
++                               rho = .80)
+
+> model_rve_c_caucasian
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ caucasian 
+
+Number of studies = 15 
+Number of outcomes = 18 (min = 1 , mean = 1.2 , median = 1 , max = 3 )
+Rho = 0.8 
+I.sq = 72.03064 
+Tau.sq = 0.005166237 
+
+               Estimate   StdErr t-value  dfs P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept. 0.175684 0.038453    4.57 6.68  0.0029   0.0839  0.26749 ***
+2    caucasian 0.000247 0.000651    0.38 6.90  0.7157  -0.0013  0.00179    
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> # Conditional RE model in robumeta with one moderator using correlational weights 
+> # age
+> 
+> model_rve_c_age <- robu(Z ~ age.m, 
++                         data = ds,
++                         studynum = id,
++                         var.eff.size = Z.var, 
++                         modelweights = "CORR",
++                         rho = .80)
+
+> model_rve_c_age
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ age.m 
+
+Number of studies = 17 
+Number of outcomes = 20 (min = 1 , mean = 1.18 , median = 1 , max = 3 )
+Rho = 0.8 
+I.sq = 62.48502 
+Tau.sq = 0.00383541 
+
+               Estimate StdErr t-value  dfs P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept.  0.07944 0.2596   0.306 9.45   0.766  -0.5035   0.6624    
+2        age.m  0.00762 0.0145   0.526 9.53   0.611  -0.0249   0.0401    
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> ##################### INDEPENDENT RE MODEL ##################### 
+> 
+> #### RE Model Full Model #### 
+> RE.model <- rma.uni(yi = Z, vi = Z.var, data = ds, method = "REML")
+
+> RE.model
+
+Random-Effects Model (k = 21; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0053 (SE = 0.0026)
+tau (square root of estimated tau^2 value):      0.0727
+I^2 (total heterogeneity / total variability):   70.42%
+H^2 (total variability / sampling variability):  3.38
+
+Test for Heterogeneity:
+Q(df = 20) = 60.4746, p-val < .0001
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub 
+  0.1971  0.0202  9.7724  <.0001  0.1575  0.2366  *** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> #### back transformation ####
+> RE_r <- (exp(2*RE.model$beta) - 1) / (exp(2*RE.model$beta) + 1)
+
+> RE_r
+             [,1]
+intrcpt 0.1945529
+
+> #### Sensitivity Analysis ####
+> # Print various influence point measures
+> options(max.print=1000000)
+
+> influence(RE.model)
+
+   rstudent  dffits cook.d  cov.r tau2.del  QE.del    hat weight    dfbs inf 
+1    0.1520  0.0296 0.0010 1.1690   0.0060 59.9258 0.0719 7.1907  0.0301     
+2   -0.8451 -0.1932 0.0381 1.0727   0.0055 58.5779 0.0481 4.8116 -0.1931     
+3   -1.9497 -0.4851 0.1867 0.8794   0.0039 45.8700 0.0608 6.0826 -0.4761     
+4    0.7211  0.1779 0.0328 1.0986   0.0055 57.8460 0.0608 6.0772  0.1784     
+5    1.2667  0.2399 0.0565 1.0073   0.0051 57.6886 0.0341 3.4145  0.2410     
+6   -0.5468 -0.1411 0.0211 1.1168   0.0057 59.2602 0.0572 5.7234 -0.1415     
+7   -0.6098 -0.1418 0.0209 1.0925   0.0056 59.5049 0.0472 4.7234 -0.1416     
+8   -0.5219 -0.0879 0.0078 1.0521   0.0055 60.0780 0.0248 2.4798 -0.0874     
+9   -1.3258 -0.2072 0.0426 1.0082   0.0052 57.9474 0.0248 2.4798 -0.2081     
+10  -2.2673 -0.4969 0.1959 0.8383   0.0037 47.8565 0.0523 5.2264 -0.4965     
+11  -0.5209 -0.1286 0.0174 1.1081   0.0057 59.6254 0.0518 5.1839 -0.1287     
+12   0.5698  0.1312 0.0181 1.1056   0.0056 59.2566 0.0553 5.5272  0.1315     
+13  -0.0467 -0.0161 0.0003 1.0908   0.0057 60.4710 0.0374 3.7398 -0.0160     
+14  -0.0460 -0.0156 0.0003 1.0878   0.0057 60.4712 0.0362 3.6181 -0.0155     
+15  -0.5240 -0.1301 0.0178 1.1092   0.0057 59.5915 0.0525 5.2471 -0.1302     
+16   0.7208  0.1778 0.0328 1.0986   0.0055 57.8539 0.0607 6.0736  0.1783     
+17   2.1190  0.3194 0.0981 0.9340   0.0046 54.4357 0.0227 2.2660  0.3277     
+18   0.7049  0.1699 0.0299 1.0965   0.0055 58.3321 0.0582 5.8196  0.1703     
+19   0.3134  0.0683 0.0050 1.1306   0.0058 60.0327 0.0580 5.7977  0.0686     
+20   0.9115  0.1893 0.0360 1.0500   0.0053 58.6813 0.0416 4.1617  0.1892     
+21   1.8706  0.4099 0.1509 0.9185   0.0043 53.3734 0.0436 4.3559  0.4143     
+
+
+> # Plots of influence measures
+> plot(influence(RE.model))
+
+> leave1out(RE.model)
+
+   estimate     se    zval   pval  ci.lb  ci.ub       Q     Qp   tau2      I2     H2 
+1    0.1964 0.0218  9.0094 0.0000 0.1537 0.2392 59.9258 0.0000 0.0060 68.4497 3.1695 
+2    0.2010 0.0209  9.6239 0.0000 0.1601 0.2419 58.5779 0.0000 0.0055 71.3199 3.4867 
+3    0.2058 0.0189 10.8816 0.0000 0.1687 0.2428 45.8700 0.0005 0.0039 62.9398 2.6983 
+4    0.1934 0.0211  9.1507 0.0000 0.1520 0.2348 57.8460 0.0000 0.0055 70.6812 3.4108 
+5    0.1923 0.0202  9.5002 0.0000 0.1526 0.2319 57.6886 0.0000 0.0051 70.2459 3.3609 
+6    0.2000 0.0213  9.3847 0.0000 0.1582 0.2418 59.2602 0.0000 0.0057 71.6844 3.5316 
+7    0.2000 0.0211  9.4877 0.0000 0.1587 0.2413 59.5049 0.0000 0.0056 71.9336 3.5630 
+8    0.1988 0.0207  9.6137 0.0000 0.1583 0.2394 60.0780 0.0000 0.0055 72.0165 3.5735 
+9    0.2012 0.0202  9.9379 0.0000 0.1615 0.2409 57.9474 0.0000 0.0052 70.7310 3.4166 
+10   0.2060 0.0185 11.1564 0.0000 0.1698 0.2422 47.8565 0.0003 0.0037 62.4114 2.6604 
+11   0.1997 0.0212  9.4087 0.0000 0.1581 0.2413 59.6254 0.0000 0.0057 71.9974 3.5711 
+12   0.1944 0.0212  9.1663 0.0000 0.1528 0.2359 59.2566 0.0000 0.0056 71.6021 3.5214 
+13   0.1974 0.0211  9.3726 0.0000 0.1561 0.2387 60.4710 0.0000 0.0057 72.4786 3.6335 
+14   0.1974 0.0210  9.3850 0.0000 0.1562 0.2386 60.4712 0.0000 0.0057 72.4613 3.6313 
+15   0.1998 0.0212  9.4058 0.0000 0.1581 0.2414 59.5915 0.0000 0.0057 71.9702 3.5676 
+16   0.1934 0.0211  9.1509 0.0000 0.1520 0.2348 57.8539 0.0000 0.0055 70.6864 3.4114 
+17   0.1907 0.0195  9.7879 0.0000 0.1526 0.2289 54.4357 0.0000 0.0046 68.3788 3.1624 
+18   0.1936 0.0211  9.1674 0.0000 0.1522 0.2350 58.3321 0.0000 0.0055 71.0040 3.4487 
+19   0.1956 0.0214  9.1241 0.0000 0.1536 0.2377 60.0327 0.0000 0.0058 71.9599 3.5663 
+20   0.1932 0.0207  9.3518 0.0000 0.1527 0.2337 58.6813 0.0000 0.0053 71.1059 3.4609 
+21   0.1892 0.0193  9.7912 0.0000 0.1514 0.2271 53.3734 0.0000 0.0043 66.6042 2.9944 
+
+
+> #### Publication Bias ####
+> 
+> #Funnel Plots 
+> 
+> par(mfrow = c(1,1))
+
+> # Funnel plot w/ SE as vertical axis
+> funnel(RE.model)
+
+> # Egger's Regression Test
+> regtest(x = ds$Z, vi = ds$Z.var, model = "lm")
+
+Regression Test for Funnel Plot Asymmetry
+
+model:     weighted regression with multiplicative dispersion
+predictor: standard error
+
+test for funnel plot asymmetry: t = 0.0722, df = 19, p = 0.9432
+
+
+> # Basic trim-and-fill code
+> trimfill(RE.model, side = "right", verbose = T)
+
+Iteration: 1    missing = 0   beta = 0.1971
+
+Estimated number of missing studies on the right side: 0 (SE = 2.7482)
+
+Random-Effects Model (k = 21; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0053 (SE = 0.0026)
+tau (square root of estimated tau^2 value):      0.0727
+I^2 (total heterogeneity / total variability):   70.42%
+H^2 (total variability / sampling variability):  3.38
+
+Test for Heterogeneity:
+Q(df = 20) = 60.4746, p-val < .0001
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub 
+  0.1971  0.0202  9.7724  <.0001  0.1575  0.2366  *** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> trimfill(RE.model, side = "left", verbose = T)
+
+Iteration: 1    missing = 0   beta = 0.1971
+
+Estimated number of missing studies on the left side: 0 (SE = 2.8587)
+
+Random-Effects Model (k = 21; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0053 (SE = 0.0026)
+tau (square root of estimated tau^2 value):      0.0727
+I^2 (total heterogeneity / total variability):   70.42%
+H^2 (total variability / sampling variability):  3.38
+
+Test for Heterogeneity:
+Q(df = 20) = 60.4746, p-val < .0001
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub 
+  0.1971  0.0202  9.7724  <.0001  0.1575  0.2366  *** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> # Plot both versions of trim-and-fill (optional)
+> par(mfrow = c(2,1))
+
+> funnel(trimfill(RE.model, side = "right"), main = "Right-Side Imputation")
+
+> funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
+
+> # Fail safe N 
+> fsn(yi = Z, vi = Z.var, data = ds)
+
+Fail-safe N Calculation Using the Rosenthal Approach
+
+Observed Significance Level: <.0001
+Target Significance Level:   0.05
+
+Fail-safe N: 2498
+
+
+> # #### Gender Moderator ####
+> # # % female 
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
+> # gender_MM_RE
+> # 
+> # #### Caucasian Moderator ####
+> # # % Caucasian 
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
+> # caucasian_MM_RE
+> # 
+> # #### Age Moderator ####
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
+> # age_MM_RE
+> 
+> #### EXTRA: Back Transform ####
+> ds$back.transform <- (exp(2*ds$Z) - 1) / (exp(2*ds$Z) + 1)
+
+> #### Clean evironment #### 
+> rm(list = ls())
+
+> ######################## 3 - HAZARDOUS SEX ######################## 
+> 
+> #### Data Prep ####
+> 
+> # pull data 
+> fullset = read.csv("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/dataset.csv", header = T, sep = ",")
+
+> # set working directoy to subfolder - holds plots 
+> setwd("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/3_HazardousSex")
+
+> # subset RSB
+> ds = subset(fullset, rsbtype == 3)
+
+> # Fisher's Z transformation
+> ds$Z <- .5*log((1 + ds$r) / (1 - ds$r))
+
+> # Variance of Fisher's Z
+> ds$Z.var <- 1 / (ds$n - 3)
+
+> ####  Forest Plot ####
+> 
+> # Create and print default forest plot
+> # yi: effect size
+> # vi: effect size variance
+> # data: data set 
+> 
+> forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
+
+> forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
+
+> ##################### Multivariate/Dependency Analyses ##################### 
+> 
+> #### RE model ####
+> # RE model in robumeta with correlational weights
+> model_rve_c <- robu(Z ~ 1, 
++                     data = ds,
++                     studynum = id,
++                     var.eff.size = Z.var, 
++                     modelweights = "CORR",
++                     rho = .80)
+
+> model_rve_c
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ 1 
+
+Number of studies = 17 
+Number of outcomes = 25 (min = 1 , mean = 1.47 , median = 1 , max = 3 )
+Rho = 0.8 
+I.sq = 78.87544 
+Tau.sq = 0.006742506 
+
+               Estimate StdErr t-value  dfs     P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept.    0.193 0.0245    7.91 15.2 0.000000914    0.141    0.246 ***
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> # Checking model sensitivity of correlational weights (i.e., choice of rho)
+> sensitivity(model_rve_c)
+RVE: Correlated Effects Model with Small-Sample Corrections 
+Model: Z ~ 1 
+
+Sensitivity Analysis 
+
+                          Rho = 0 Rho = 0.2 Rho = 0.4 Rho = 0.6 Rho = 0.8 Rho = 1
+ X.Intercept. Coefficient 0.19344 0.19344   0.19345   0.19345   0.19346   0.19346
+              Std. Error  0.02447 0.02447   0.02447   0.02447   0.02447   0.02447
+ Tau.sq       Estimate    0.00673 0.00673   0.00673   0.00674   0.00674   0.00675
+
+> # forest plot
+> jpeg('Forest_Plot.jpg', width = 610, height = 880)
+
+> forest.robu(model_rve_c,
++             es.lab = "rsbtype",
++             study.lab = "id")
+
+> dev.off()
+RStudioGD 
+        2 
+
+> #### multivariate moderator ####
+> 
+> # Conditional RE model in robumeta with one moderator using correlational weights 
+> # gender
+> 
+> model_rve_c_female <- robu(Z ~ female, 
++                            data = ds,
++                            studynum = id,
++                            var.eff.size = Z.var, 
++                            modelweights = "CORR",
++                            rho = .80)
+
+> model_rve_c_female
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ female 
+
+Number of studies = 17 
+Number of outcomes = 25 (min = 1 , mean = 1.47 , median = 1 , max = 3 )
+Rho = 0.8 
+I.sq = 78.39471 
+Tau.sq = 0.006827142 
+
+               Estimate   StdErr t-value  dfs P(|t|>)  95% CI.L 95% CI.U Sig
+1 X.Intercept. 0.160977 0.044670   3.604 5.87  0.0117  0.051103  0.27085  **
+2       female 0.000611 0.000693   0.882 8.79  0.4013 -0.000963  0.00219    
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> # Conditional RE model in robumeta with one moderator using correlational weights 
+> # race
+> 
+> model_rve_c_caucasian <- robu(Z ~ caucasian, 
++                               data = ds,
++                               studynum = id,
++                               var.eff.size = Z.var, 
++                               modelweights = "CORR",
++                               rho = .80)
+
+> model_rve_c_caucasian
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ caucasian 
+
+Number of studies = 9 
+Number of outcomes = 15 (min = 1 , mean = 1.67 , median = 1 , max = 3 )
+Rho = 0.8 
+I.sq = 79.85486 
+Tau.sq = 0.007279548 
+
+                Estimate  StdErr t-value  dfs P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept.  0.219706 0.05194   4.230 3.86  0.0144  0.07345  0.36596  **
+2    caucasian -0.000976 0.00124  -0.785 3.42  0.4833 -0.00467  0.00272    
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> # Conditional RE model in robumeta with one moderator using correlational weights 
+> # age
+> 
+> model_rve_c_age <- robu(Z ~ age.m, 
++                         data = ds,
++                         studynum = id,
++                         var.eff.size = Z.var, 
++                         modelweights = "CORR",
++                         rho = .80)
+
+> model_rve_c_age
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ age.m 
+
+Number of studies = 15 
+Number of outcomes = 23 (min = 1 , mean = 1.53 , median = 1 , max = 3 )
+Rho = 0.8 
+I.sq = 80.87615 
+Tau.sq = 0.00769458 
+
+               Estimate StdErr t-value  dfs P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept.  0.22152 0.4837  0.4579 3.56   0.674  -1.1890   1.6321    
+2        age.m -0.00206 0.0295 -0.0699 3.28   0.948  -0.0916   0.0875    
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> ##################### INDEPENDENT RE MODEL ##################### 
+> 
+> 
+> #### RE Model Full Model #### 
+> RE.model <- rma.uni(yi = Z, vi = Z.var, data = ds, method = "REML")
+
+> RE.model
+
+Random-Effects Model (k = 25; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0071 (SE = 0.0028)
+tau (square root of estimated tau^2 value):      0.0845
+I^2 (total heterogeneity / total variability):   79.36%
+H^2 (total variability / sampling variability):  4.85
+
+Test for Heterogeneity:
+Q(df = 24) = 99.7121, p-val < .0001
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub 
+  0.1893  0.0197  9.5999  <.0001  0.1506  0.2279  *** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> #### back transformation ####
+> RE_r <- (exp(2*RE.model$beta) - 1) / (exp(2*RE.model$beta) + 1)
+
+> RE_r
+             [,1]
+intrcpt 0.1870268
+
+> #### Sensitivity Analysis ####
+> # Print various influence point measures
+> options(max.print=1000000)
+
+> influence(RE.model)
+
+   rstudent  dffits cook.d  cov.r tau2.del  QE.del    hat weight    dfbs inf 
+1    0.2514  0.0226 0.0005 1.1072   0.0077 97.7891 0.0460 4.6031  0.0227     
+2    0.5442  0.0777 0.0061 1.0476   0.0073 98.6331 0.0261 2.6111  0.0774     
+3    0.1169 -0.0104 0.0001 1.1173   0.0077 98.2705 0.0479 4.7876 -0.0105     
+4   -1.0825 -0.2163 0.0471 1.0452   0.0072 97.5588 0.0370 3.7015 -0.2162     
+5   -0.8910 -0.2158 0.0480 1.0785   0.0074 96.2106 0.0484 4.8359 -0.2162     
+6    1.0053  0.1708 0.0290 1.0160   0.0070 96.9476 0.0262 2.6216  0.1711     
+7    1.7050  0.4279 0.1628 0.9211   0.0061 86.8961 0.0401 4.0108  0.4291     
+8    1.4153  0.3469 0.1114 0.9669   0.0064 88.1844 0.0422 4.2231  0.3468     
+9    0.3524  0.0469 0.0023 1.0928   0.0076 97.9534 0.0422 4.2231  0.0469     
+10  -0.5081 -0.1362 0.0195 1.0976   0.0076 99.4364 0.0422 4.2231 -0.1362     
+11  -0.0859 -0.0554 0.0033 1.1154   0.0077 99.4799 0.0455 4.5514 -0.0556     
+12  -0.0859 -0.0554 0.0033 1.1154   0.0077 99.4799 0.0455 4.5514 -0.0556     
+13  -0.3001 -0.0983 0.0103 1.1085   0.0077 99.7068 0.0436 4.3610 -0.0984     
+14  -0.8445 -0.1975 0.0402 1.0763   0.0074 98.0067 0.0436 4.3610 -0.1976     
+15  -0.1962 -0.0792 0.0067 1.1150   0.0077 99.6724 0.0455 4.5503 -0.0794     
+16  -0.5270 -0.1453 0.0224 1.1037   0.0076 99.2985 0.0455 4.5524 -0.1457     
+17   2.2139  0.3713 0.1307 0.9092   0.0061 91.2482 0.0201 2.0108  0.3828     
+18   2.1151  0.3528 0.1186 0.9187   0.0062 91.8944 0.0201 2.0108  0.3627     
+19  -0.6257 -0.1695 0.0304 1.1038   0.0076 98.4772 0.0488 4.8801 -0.1702     
+20  -1.9417 -0.3508 0.1038 0.9097   0.0059 77.6882 0.0486 4.8572 -0.3465     
+21  -1.5127 -0.2862 0.0779 0.9936   0.0067 93.2076 0.0422 4.2171 -0.2861     
+22  -0.8301 -0.1918 0.0379 1.0753   0.0074 98.2646 0.0422 4.2171 -0.1919     
+23  -0.7218 -0.1739 0.0314 1.0841   0.0075 98.7574 0.0422 4.2171 -0.1739     
+24   1.0182  0.1974 0.0385 1.0203   0.0070 95.7625 0.0335 3.3455  0.1977     
+25   1.7301  0.3935 0.1414 0.9275   0.0062 90.1111 0.0348 3.4759  0.3973     
+
+
+> # Plots of influence measures
+> plot(influence(RE.model))
+
+> leave1out(RE.model)
+
+   estimate     se    zval   pval  ci.lb  ci.ub       Q     Qp   tau2      I2     H2 
+1    0.1888 0.0207  9.1012 0.0000 0.1481 0.2295 97.7891 0.0000 0.0077 80.2220 5.0561 
+2    0.1877 0.0202  9.3027 0.0000 0.1482 0.2273 98.6331 0.0000 0.0073 80.2979 5.0756 
+3    0.1895 0.0208  9.0921 0.0000 0.1486 0.2303 98.2705 0.0000 0.0077 80.0677 5.0170 
+4    0.1935 0.0202  9.6022 0.0000 0.1540 0.2330 97.5588 0.0000 0.0072 79.8031 4.9513 
+5    0.1936 0.0205  9.4546 0.0000 0.1534 0.2337 96.2106 0.0000 0.0074 79.2025 4.8083 
+6    0.1859 0.0199  9.3550 0.0000 0.1470 0.2248 96.9476 0.0000 0.0070 79.6613 4.9167 
+7    0.1813 0.0189  9.5824 0.0000 0.1442 0.2184 86.8961 0.0000 0.0061 76.7647 4.3038 
+8    0.1827 0.0194  9.4236 0.0000 0.1447 0.2207 88.1844 0.0000 0.0064 77.7210 4.4885 
+9    0.1883 0.0206  9.1371 0.0000 0.1479 0.2287 97.9534 0.0000 0.0076 80.3780 5.0963 
+10   0.1920 0.0207  9.2964 0.0000 0.1515 0.2325 99.4364 0.0000 0.0076 80.4667 5.1195 
+11   0.1904 0.0208  9.1440 0.0000 0.1496 0.2312 99.4799 0.0000 0.0077 80.4467 5.1142 
+12   0.1904 0.0208  9.1440 0.0000 0.1496 0.2312 99.4799 0.0000 0.0077 80.4467 5.1142 
+13   0.1913 0.0208  9.2140 0.0000 0.1506 0.2319 99.7068 0.0000 0.0077 80.5419 5.1393 
+14   0.1932 0.0205  9.4466 0.0000 0.1531 0.2333 98.0067 0.0000 0.0074 79.9360 4.9841 
+15   0.1909 0.0208  9.1690 0.0000 0.1501 0.2317 99.6724 0.0000 0.0077 80.4404 5.1126 
+16   0.1922 0.0207  9.2802 0.0000 0.1516 0.2328 99.2985 0.0000 0.0076 80.2294 5.0580 
+17   0.1821 0.0188  9.6888 0.0000 0.1453 0.2190 91.2482 0.0000 0.0061 77.4082 4.4264 
+18   0.1825 0.0189  9.6565 0.0000 0.1454 0.2195 91.8944 0.0000 0.0062 77.6487 4.4740 
+19   0.1927 0.0207  9.3034 0.0000 0.1521 0.2333 98.4772 0.0000 0.0076 79.5699 4.8947 
+20   0.1956 0.0188 10.4026 0.0000 0.1588 0.2325 77.6882 0.0000 0.0059 75.1354 4.0218 
+21   0.1948 0.0197  9.9110 0.0000 0.1562 0.2333 93.2076 0.0000 0.0067 78.3462 4.6181 
+22   0.1931 0.0204  9.4452 0.0000 0.1530 0.2332 98.2646 0.0000 0.0074 80.0515 5.0129 
+23   0.1927 0.0205  9.3901 0.0000 0.1525 0.2330 98.7574 0.0000 0.0075 80.2192 5.0554 
+24   0.1854 0.0199  9.3096 0.0000 0.1464 0.2244 95.7625 0.0000 0.0070 79.4693 4.8708 
+25   0.1818 0.0190  9.5775 0.0000 0.1446 0.2191 90.1111 0.0000 0.0062 77.2779 4.4010 
+
+
+> #### Publication Bias ####
+> 
+> #Funnel Plots 
+> 
+> par(mfrow = c(1,1))
+
+> # Funnel plot w/ SE as vertical axis
+> funnel(RE.model)
+
+> # Egger's Regression Test
+> regtest(x = ds$Z, vi = ds$Z.var, model = "lm")
+
+Regression Test for Funnel Plot Asymmetry
+
+model:     weighted regression with multiplicative dispersion
+predictor: standard error
+
+test for funnel plot asymmetry: t = 3.5652, df = 23, p = 0.0016
+
+
+> # Basic trim-and-fill code
+> trimfill(RE.model, side = "right", verbose = T)
+
+Iteration: 1    missing = 0   beta = 0.1893
+
+Estimated number of missing studies on the right side: 0 (SE = 2.9014)
+
+Random-Effects Model (k = 25; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0071 (SE = 0.0028)
+tau (square root of estimated tau^2 value):      0.0845
+I^2 (total heterogeneity / total variability):   79.36%
+H^2 (total variability / sampling variability):  4.85
+
+Test for Heterogeneity:
+Q(df = 24) = 99.7121, p-val < .0001
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub 
+  0.1893  0.0197  9.5999  <.0001  0.1506  0.2279  *** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> trimfill(RE.model, side = "left", verbose = T)
+
+Iteration: 1    missing = 1   beta = 0.1893
+Iteration: 2    missing = 2   beta = 0.1821
+Iteration: 3    missing = 2   beta = 0.1758
+
+Estimated number of missing studies on the left side: 2 (SE = 3.2882)
+
+Random-Effects Model (k = 27; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0092 (SE = 0.0033)
+tau (square root of estimated tau^2 value):      0.0959
+I^2 (total heterogeneity / total variability):   82.25%
+H^2 (total variability / sampling variability):  5.64
+
+Test for Heterogeneity:
+Q(df = 26) = 113.4734, p-val < .0001
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub 
+  0.1780  0.0213  8.3563  <.0001  0.1363  0.2198  *** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> # Plot both versions of trim-and-fill (optional)
+> par(mfrow = c(2,1))
+
+> funnel(trimfill(RE.model, side = "right"), main = "Right-Side Imputation")
+
+> funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
+
+> # Fail safe N 
+> fsn(yi = Z, vi = Z.var, data = ds)
+
+Fail-safe N Calculation Using the Rosenthal Approach
+
+Observed Significance Level: <.0001
+Target Significance Level:   0.05
+
+Fail-safe N: 3717
+
+
+> # #### Gender Moderator ####
+> # # % female 
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
+> # gender_MM_RE
+> # 
+> # #### Caucasian Moderator ####
+> # # % Caucasian 
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
+> # caucasian_MM_RE
+> # 
+> # #### Age Moderator ####
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
+> # age_MM_RE
+> 
+> #### EXTRA: Back Transform ####
+> ds$back.transform <- (exp(2*ds$Z) - 1) / (exp(2*ds$Z) + 1)
+
+> #### Clean evironment #### 
+> rm(list = ls())
+
+> ######################## 4 - SEX INITIATION ######################## 
+> 
+> #### Data Prep ####
+> 
+> # pull data 
+> fullset = read.csv("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/dataset.csv", header = T, sep = ",")
+
+> # set working directoy to subfolder - holds plots 
+> setwd("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/4_SexInitiation")
+
+> # subset RSB
+> ds = subset(fullset, rsbtype == 4)
+
+> # Fisher's Z transformation
+> ds$Z <- .5*log((1 + ds$r) / (1 - ds$r))
+
+> # Variance of Fisher's Z
+> ds$Z.var <- 1 / (ds$n - 3)
+
+> ####  Forest Plot ####
+> 
+> # Create and print default forest plot
+> # yi: effect size
+> # vi: effect size variance
+> # data: data set 
+> 
+> forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
+
+> forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
+
+> ##################### Multivariate/Dependency Analyses ##################### 
+> 
+> #### RE model ####
+> # RE model in robumeta with correlational weights
+> model_rve_c <- robu(Z ~ 1, 
++                     data = ds,
++                     studynum = id,
++                     var.eff.size = Z.var, 
++                     modelweights = "CORR",
++                     rho = .80)
+
+> model_rve_c
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ 1 
+
+Number of studies = 6 
+Number of outcomes = 7 (min = 1 , mean = 1.17 , median = 1 , max = 2 )
+Rho = 0.8 
+I.sq = 89.15226 
+Tau.sq = 0.02388752 
+
+               Estimate StdErr t-value  dfs P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept.   -0.194 0.0614   -3.16 4.94  0.0254   -0.353  -0.0359  **
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> # Checking model sensitivity of correlational weights (i.e., choice of rho)
+> sensitivity(model_rve_c)
+RVE: Correlated Effects Model with Small-Sample Corrections 
+Model: Z ~ 1 
+
+Sensitivity Analysis 
+
+                          Rho = 0 Rho = 0.2 Rho = 0.4 Rho = 0.6 Rho = 0.8 Rho = 1
+ X.Intercept. Coefficient -0.1943 -0.1943   -0.1943   -0.1943   -0.1943   -0.1943
+              Std. Error   0.0614  0.0614    0.0614    0.0614    0.0614    0.0614
+ Tau.sq       Estimate     0.0239  0.0239    0.0239    0.0239    0.0239    0.0239
+
+> # forest plot
+> jpeg('Forest_Plot.jpg', width = 610, height = 880)
+
+> forest.robu(model_rve_c,
++             es.lab = "rsbtype",
++             study.lab = "id")
+
+> dev.off()
+RStudioGD 
+        2 
+
+> #### multivariate moderator ####
+> 
+> # Conditional RE model in robumeta with one moderator using correlational weights 
+> # gender
+> 
+> model_rve_c_female <- robu(Z ~ female, 
++                            data = ds,
++                            studynum = id,
++                            var.eff.size = Z.var, 
++                            modelweights = "CORR",
++                            rho = .80)
+
+> model_rve_c_female
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ female 
+
+Number of studies = 6 
+Number of outcomes = 7 (min = 1 , mean = 1.17 , median = 1 , max = 2 )
+Rho = 0.8 
+I.sq = 89.90584 
+Tau.sq = 0.02844811 
+
+               Estimate   StdErr t-value  dfs P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept. -0.14432 0.092333   -1.56 2.86   0.220 -0.44640  0.15777    
+2       female -0.00136 0.000999   -1.36 2.16   0.299 -0.00536  0.00265    
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> # Conditional RE model in robumeta with one moderator using correlational weights 
+> # race
+> 
+> model_rve_c_caucasian <- robu(Z ~ caucasian, 
++                               data = ds,
++                               studynum = id,
++                               var.eff.size = Z.var, 
++                               modelweights = "CORR",
++                               rho = .80)
+
+> model_rve_c_caucasian
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ caucasian 
+
+Number of studies = 6 
+Number of outcomes = 7 (min = 1 , mean = 1.17 , median = 1 , max = 2 )
+Rho = 0.8 
+I.sq = 84.99408 
+Tau.sq = 0.01739754 
+
+               Estimate  StdErr t-value  dfs P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept. -0.11395 0.09000   -1.27 2.51   0.310 -0.43505  0.20715    
+2    caucasian -0.00249 0.00132   -1.88 2.43   0.178 -0.00732  0.00235    
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> # Conditional RE model in robumeta with one moderator using correlational weights 
+> # age
+> 
+> model_rve_c_age <- robu(Z ~ age.m, 
++                         data = ds,
++                         studynum = id,
++                         var.eff.size = Z.var, 
++                         modelweights = "CORR",
++                         rho = .80)
+
+> model_rve_c_age
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ age.m 
+
+Number of studies = 6 
+Number of outcomes = 7 (min = 1 , mean = 1.17 , median = 1 , max = 2 )
+Rho = 0.8 
+I.sq = 73.3928 
+Tau.sq = 0.008583251 
+
+               Estimate StdErr t-value  dfs P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept.   1.0874 0.4171    2.61 2.91  0.0824   -0.264  2.43839   *
+2        age.m  -0.0753 0.0224   -3.36 2.47  0.0582   -0.156  0.00554   *
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> ##################### INDEPENDENT RE MODEL ##################### 
+> 
+> 
+> 
+> #### RE Model Full Model #### 
+> RE.model <- rma.uni(yi = Z, vi = Z.var, data = ds, method = "REML")
+
+> RE.model
+
+Random-Effects Model (k = 7; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0247 (SE = 0.0169)
+tau (square root of estimated tau^2 value):      0.1573
+I^2 (total heterogeneity / total variability):   88.28%
+H^2 (total variability / sampling variability):  8.53
+
+Test for Heterogeneity:
+Q(df = 6) = 50.9642, p-val < .0001
+
+Model Results:
+
+estimate      se     zval    pval    ci.lb    ci.ub 
+ -0.1823  0.0648  -2.8126  0.0049  -0.3094  -0.0553  ** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> #### back transformation ####
+> RE_r <- (exp(2*RE.model$beta) - 1) / (exp(2*RE.model$beta) + 1)
+
+> RE_r
+              [,1]
+intrcpt -0.1803461
+
+> #### Sensitivity Analysis ####
+> # Print various influence point measures
+> options(max.print=1000000)
+
+> influence(RE.model)
+
+  rstudent  dffits cook.d  cov.r tau2.del  QE.del    hat  weight    dfbs inf 
+1  -0.5693 -0.2224 0.0544 1.2750   0.0283 50.5076 0.1172 11.7213 -0.2201     
+2   1.7613  0.6362 0.3313 0.8715   0.0182 41.4734 0.1172 11.7213  0.6539     
+3   1.8815  0.8988 0.5033 0.7660   0.0145 18.8023 0.1543 15.4294  0.8841   * 
+4  -0.4382 -0.1954 0.0449 1.3759   0.0298 50.5306 0.1478 14.7803 -0.1957     
+5   0.0553  0.0071 0.0001 1.4167   0.0309 50.3775 0.1458 14.5795  0.0071     
+6  -1.0910 -0.4729 0.2172 1.1584   0.0240 38.5641 0.1589 15.8921 -0.4723     
+7  -0.8225 -0.3612 0.1409 1.2734   0.0269 44.4314 0.1588 15.8762 -0.3624     
+
+
+> # Plots of influence measures
+> plot(influence(RE.model))
+
+> leave1out(RE.model)
+
+  estimate     se    zval   pval   ci.lb   ci.ub       Q     Qp   tau2      I2      H2 
+1  -0.1672 0.0732 -2.2844 0.0223 -0.3107 -0.0237 50.5076 0.0000 0.0283 90.6933 10.7450 
+2  -0.2197 0.0605 -3.6293 0.0003 -0.3383 -0.1010 41.4734 0.0000 0.0182 86.2611  7.2786 
+3  -0.2283 0.0567 -4.0242 0.0001 -0.3395 -0.1171 18.8023 0.0021 0.0145 80.4046  5.1032 
+4  -0.1686 0.0760 -2.2171 0.0266 -0.3176 -0.0196 50.5306 0.0000 0.0298 90.1256 10.1272 
+5  -0.1828 0.0772 -2.3696 0.0178 -0.3341 -0.0316 50.3775 0.0000 0.0309 90.5796 10.6152 
+6  -0.1521 0.0698 -2.1803 0.0292 -0.2889 -0.0154 38.5641 0.0000 0.0240 86.0951  7.1917 
+7  -0.1580 0.0732 -2.1599 0.0308 -0.3014 -0.0146 44.4314 0.0000 0.0269 87.4340  7.9580 
+
+
+> #### Publication Bias ####
+> 
+> #Funnel Plots 
+> 
+> par(mfrow = c(1,1))
+
+> # Funnel plot w/ SE as vertical axis
+> funnel(RE.model)
+
+> # Egger's Regression Test
+> regtest(x = ds$Z, vi = ds$Z.var, model = "lm")
+
+Regression Test for Funnel Plot Asymmetry
+
+model:     weighted regression with multiplicative dispersion
+predictor: standard error
+
+test for funnel plot asymmetry: t = 0.9671, df = 5, p = 0.3779
+
+
+> # Basic trim-and-fill code
+> trimfill(RE.model, side = "right", verbose = T)
+
+Iteration: 1    missing = 0  beta = -0.1823
+
+Estimated number of missing studies on the right side: 0 (SE = 1.8203)
+
+Random-Effects Model (k = 7; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0247 (SE = 0.0169)
+tau (square root of estimated tau^2 value):      0.1573
+I^2 (total heterogeneity / total variability):   88.28%
+H^2 (total variability / sampling variability):  8.53
+
+Test for Heterogeneity:
+Q(df = 6) = 50.9642, p-val < .0001
+
+Model Results:
+
+estimate      se     zval    pval    ci.lb    ci.ub 
+ -0.1823  0.0648  -2.8126  0.0049  -0.3094  -0.0553  ** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> trimfill(RE.model, side = "left", verbose = T)
+
+Iteration: 1    missing = 0  beta = -0.1823
+
+Estimated number of missing studies on the left side: 0 (SE = 1.8203)
+
+Random-Effects Model (k = 7; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0247 (SE = 0.0169)
+tau (square root of estimated tau^2 value):      0.1573
+I^2 (total heterogeneity / total variability):   88.28%
+H^2 (total variability / sampling variability):  8.53
+
+Test for Heterogeneity:
+Q(df = 6) = 50.9642, p-val < .0001
+
+Model Results:
+
+estimate      se     zval    pval    ci.lb    ci.ub 
+ -0.1823  0.0648  -2.8126  0.0049  -0.3094  -0.0553  ** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> # Plot both versions of trim-and-fill (optional)
+> par(mfrow = c(2,1))
+
+> funnel(trimfill(RE.model, side = "right"), main = "Right-Side Imputation")
+
+> funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
+
+> # Fail safe N 
+> fsn(yi = Z, vi = Z.var, data = ds)
+
+Fail-safe N Calculation Using the Rosenthal Approach
+
+Observed Significance Level: <.0001
+Target Significance Level:   0.05
+
+Fail-safe N: 200
+
+
+> # #### Gender Moderator ####
+> # # % female 
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
+> # gender_MM_RE
+> # 
+> # #### Caucasian Moderator ####
+> # # % Caucasian 
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
+> # caucasian_MM_RE
+> # 
+> # #### Age Moderator ####
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
+> # age_MM_RE
+> 
+> #### EXTRA: Back Transform ####
+> ds$back.transform <- (exp(2*ds$Z) - 1) / (exp(2*ds$Z) + 1)
+
+> #### Clean evironment #### 
+> rm(list = ls())
+
+> ######################## 5 - VIRGINITY STATUS ######################## 
+> 
+> #### Data Prep ####
+> 
+> # pull data 
+> fullset = read.csv("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/dataset.csv", header = T, sep = ",")
+
+> # set working directoy to subfolder - holds plots 
+> setwd("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/5_VirginityStatus")
+
+> # subset RSB
+> ds = subset(fullset, rsbtype == 5)
+
+> # Fisher's Z transformation
+> ds$Z <- .5*log((1 + ds$r) / (1 - ds$r))
+
+> # Variance of Fisher's Z
+> ds$Z.var <- 1 / (ds$n - 3)
+
+> ####  Forest Plot ####
+> 
+> # Create and print default forest plot
+> # yi: effect size
+> # vi: effect size variance
+> # data: data set 
+> 
+> forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
+
+> forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
+
+> ##################### Multivariate/Dependency Analyses ##################### 
+> 
+> #### RE model ####
+> # RE model in robumeta with correlational weights
+> model_rve_c <- robu(Z ~ 1, 
++                     data = ds,
++                     studynum = id,
++                     var.eff.size = Z.var, 
++                     modelweights = "CORR",
++                     rho = .80)
+
+> model_rve_c
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ 1 
+
+Number of studies = 12 
+Number of outcomes = 13 (min = 1 , mean = 1.08 , median = 1 , max = 2 )
+Rho = 0.8 
+I.sq = 83.16386 
+Tau.sq = 0.006261208 
+
+               Estimate StdErr t-value  dfs    P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept.    0.223  0.027    8.26 9.94 0.00000919    0.163    0.283 ***
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> # Checking model sensitivity of correlational weights (i.e., choice of rho)
+> sensitivity(model_rve_c)
+RVE: Correlated Effects Model with Small-Sample Corrections 
+Model: Z ~ 1 
+
+Sensitivity Analysis 
+
+                          Rho = 0 Rho = 0.2 Rho = 0.4 Rho = 0.6 Rho = 0.8 Rho = 1
+ X.Intercept. Coefficient 0.22272 0.22272   0.22272   0.22272   0.22272   0.22272
+              Std. Error  0.02696 0.02696   0.02696   0.02696   0.02696   0.02696
+ Tau.sq       Estimate    0.00626 0.00626   0.00626   0.00626   0.00626   0.00626
+
+> # forest plot
+> jpeg('Forest_Plot.jpg', width = 610, height = 880)
+
+> forest.robu(model_rve_c,
++             es.lab = "rsbtype",
++             study.lab = "id")
+
+> dev.off()
+RStudioGD 
+        2 
+
+> #### multivariate moderator ####
+> 
+> # Conditional RE model in robumeta with one moderator using correlational weights 
+> # gender
+> 
+> model_rve_c_female <- robu(Z ~ female, 
++                            data = ds,
++                            studynum = id,
++                            var.eff.size = Z.var, 
++                            modelweights = "CORR",
++                            rho = .80)
+
+> model_rve_c_female
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ female 
+
+Number of studies = 12 
+Number of outcomes = 13 (min = 1 , mean = 1.08 , median = 1 , max = 2 )
+Rho = 0.8 
+I.sq = 75.42399 
+Tau.sq = 0.003940732 
+
+               Estimate  StdErr t-value dfs P(|t|>)  95% CI.L 95% CI.U Sig
+1 X.Intercept.  0.05735 0.05113    1.12 6.1   0.304 -0.067258  0.18196    
+2       female  0.00269 0.00061    4.40 2.8   0.025  0.000664  0.00471  **
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> # Conditional RE model in robumeta with one moderator using correlational weights 
+> # race
+> 
+> model_rve_c_caucasian <- robu(Z ~ caucasian, 
++                               data = ds,
++                               studynum = id,
++                               var.eff.size = Z.var, 
++                               modelweights = "CORR",
++                               rho = .80)
+
+> model_rve_c_caucasian
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ caucasian 
+
+Number of studies = 12 
+Number of outcomes = 13 (min = 1 , mean = 1.08 , median = 1 , max = 2 )
+Rho = 0.8 
+I.sq = 82.41649 
+Tau.sq = 0.005995146 
+
+               Estimate  StdErr t-value  dfs P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept.  0.25951 0.03765    6.89 4.90 0.00107  0.16209   0.3569 ***
+2    caucasian -0.00104 0.00096   -1.09 6.06 0.31916 -0.00338   0.0013    
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> # Conditional RE model in robumeta with one moderator using correlational weights 
+> # age
+> 
+> model_rve_c_age <- robu(Z ~ age.m, 
++                         data = ds,
++                         studynum = id,
++                         var.eff.size = Z.var, 
++                         modelweights = "CORR",
++                         rho = .80)
+
+> model_rve_c_age
+RVE: Correlated Effects Model with Small-Sample Corrections 
+
+Model: Z ~ age.m 
+
+Number of studies = 7 
+Number of outcomes = 8 (min = 1 , mean = 1.14 , median = 1 , max = 2 )
+Rho = 0.8 
+I.sq = 50.19212 
+Tau.sq = 0.001986282 
+
+               Estimate  StdErr t-value  dfs P(|t|>) 95% CI.L 95% CI.U Sig
+1 X.Intercept.  -0.0472 0.14594  -0.323 2.41   0.772 -0.58266   0.4883    
+2        age.m   0.0200 0.00919   2.178 2.91   0.120 -0.00974   0.0498    
+---
+Signif. codes: < .01 *** < .05 ** < .10 *
+---
+Note: If df < 4, do not trust the results
+> ##################### INDEPENDENT RE MODEL ##################### 
+> 
+> 
+> 
+> 
+> #### RE Model Full Model #### 
+> RE.model <- rma.uni(yi = Z, vi = Z.var, data = ds, method = "REML")
+
+> RE.model
+
+Random-Effects Model (k = 13; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0072 (SE = 0.0039)
+tau (square root of estimated tau^2 value):      0.0846
+I^2 (total heterogeneity / total variability):   84.96%
+H^2 (total variability / sampling variability):  6.65
+
+Test for Heterogeneity:
+Q(df = 12) = 78.7977, p-val < .0001
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub 
+  0.2330  0.0275  8.4696  <.0001  0.1791  0.2870  *** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> #### back transformation ####
+> RE_r <- (exp(2*RE.model$beta) - 1) / (exp(2*RE.model$beta) + 1)
+
+> RE_r
+             [,1]
+intrcpt 0.2289184
+
+> #### Sensitivity Analysis ####
+> # Print various influence point measures
+> options(max.print=1000000)
+
+> influence(RE.model)
+
+   rstudent  dffits cook.d  cov.r tau2.del  QE.del    hat  weight    dfbs inf 
+1    0.3813  0.1244 0.0171 1.2071   0.0080 71.0259 0.1006 10.0577  0.1255     
+2    0.4472  0.1293 0.0177 1.1545   0.0078 77.5085 0.0772  7.7218  0.1291     
+3   -1.1358 -0.3761 0.1365 1.0760   0.0069 65.7142 0.0979  9.7930 -0.3751     
+4   -0.6228 -0.1789 0.0334 1.1342   0.0076 77.9877 0.0752  7.5213 -0.1785     
+5   -0.5232 -0.1526 0.0246 1.1483   0.0077 78.2458 0.0773  7.7328 -0.1523     
+6    1.4374  0.4512 0.1850 1.0031   0.0064 65.0662 0.0884  8.8367  0.4499     
+7   -0.9995 -0.3352 0.1119 1.1089   0.0071 60.2285 0.1010 10.0964 -0.3350     
+8   -1.6827 -0.4755 0.2025 0.9573   0.0061 71.6476 0.0760  7.6012 -0.4783     
+9    0.1359  0.0230 0.0005 1.0589   0.0074 78.7340 0.0275  2.7464  0.0228     
+10   0.0104  0.0021 0.0000 1.1436   0.0078 78.7502 0.0640  6.3987  0.0021     
+11   0.4779  0.1475 0.0234 1.1736   0.0078 76.3007 0.0884  8.8367  0.1478     
+12   2.2096  0.7051 0.3647 0.8202   0.0049 54.0901 0.0884  8.8367  0.6990     
+13   0.1605  0.0323 0.0011 1.0828   0.0075 78.6947 0.0382  3.8204  0.0320     
+
+
+> # Plots of influence measures
+> plot(influence(RE.model))
+
+> leave1out(RE.model)
+
+   estimate     se   zval   pval  ci.lb  ci.ub       Q     Qp   tau2      I2     H2 
+1    0.2294 0.0302 7.5897 0.0000 0.1702 0.2887 71.0259 0.0000 0.0080 83.5610 6.0831 
+2    0.2294 0.0296 7.7586 0.0000 0.1714 0.2873 77.5085 0.0000 0.0078 86.4372 7.3731 
+3    0.2432 0.0285 8.5210 0.0000 0.1873 0.2992 65.7142 0.0000 0.0069 82.8198 5.8207 
+4    0.2381 0.0293 8.1244 0.0000 0.1806 0.2955 77.9877 0.0000 0.0076 86.2546 7.2752 
+5    0.2374 0.0295 8.0500 0.0000 0.1796 0.2952 78.2458 0.0000 0.0077 86.3538 7.3280 
+6    0.2212 0.0276 8.0269 0.0000 0.1672 0.2752 65.0662 0.0000 0.0064 83.4293 6.0348 
+7    0.2423 0.0290 8.3607 0.0000 0.1855 0.2990 60.2285 0.0000 0.0071 81.7333 5.4744 
+8    0.2454 0.0269 9.1165 0.0000 0.1927 0.2982 71.6476 0.0000 0.0061 83.4505 6.0425 
+9    0.2324 0.0283 8.2080 0.0000 0.1769 0.2879 78.7340 0.0000 0.0074 86.4059 7.3562 
+10   0.2330 0.0294 7.9181 0.0000 0.1753 0.2907 78.7502 0.0000 0.0078 86.7299 7.5358 
+11   0.2288 0.0298 7.6771 0.0000 0.1704 0.2873 76.3007 0.0000 0.0078 86.0325 7.1595 
+12   0.2164 0.0249 8.6849 0.0000 0.1676 0.2653 54.0901 0.0000 0.0049 79.3804 4.8498 
+13   0.2322 0.0286 8.1080 0.0000 0.1760 0.2883 78.6947 0.0000 0.0075 86.5238 7.4205 
+
+
+> #### Publication Bias ####
+> 
+> #Funnel Plots 
+> 
+> par(mfrow = c(1,1))
+
+> # Funnel plot w/ SE as vertical axis
+> funnel(RE.model)
+
+> # Egger's Regression Test
+> regtest(x = ds$Z, vi = ds$Z.var, model = "lm")
+
+Regression Test for Funnel Plot Asymmetry
+
+model:     weighted regression with multiplicative dispersion
+predictor: standard error
+
+test for funnel plot asymmetry: t = 0.6446, df = 11, p = 0.5324
+
+
+> # Basic trim-and-fill code
+> trimfill(RE.model, side = "right", verbose = T)
+
+Iteration: 1    missing = 0   beta = 0.2330
+
+Estimated number of missing studies on the right side: 0 (SE = 2.3040)
+
+Random-Effects Model (k = 13; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0072 (SE = 0.0039)
+tau (square root of estimated tau^2 value):      0.0846
+I^2 (total heterogeneity / total variability):   84.96%
+H^2 (total variability / sampling variability):  6.65
+
+Test for Heterogeneity:
+Q(df = 12) = 78.7977, p-val < .0001
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub 
+  0.2330  0.0275  8.4696  <.0001  0.1791  0.2870  *** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> trimfill(RE.model, side = "left", verbose = T)
+
+Iteration: 1    missing = 0   beta = 0.2330
+
+Estimated number of missing studies on the left side: 0 (SE = 2.2742)
+
+Random-Effects Model (k = 13; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0.0072 (SE = 0.0039)
+tau (square root of estimated tau^2 value):      0.0846
+I^2 (total heterogeneity / total variability):   84.96%
+H^2 (total variability / sampling variability):  6.65
+
+Test for Heterogeneity:
+Q(df = 12) = 78.7977, p-val < .0001
+
+Model Results:
+
+estimate      se    zval    pval   ci.lb   ci.ub 
+  0.2330  0.0275  8.4696  <.0001  0.1791  0.2870  *** 
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> # Plot both versions of trim-and-fill (optional)
+> par(mfrow = c(2,1))
+
+> funnel(trimfill(RE.model, side = "right"), main = "Right-Side Imputation")
+
+> funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
+
+> # Fail safe N 
+> fsn(yi = Z, vi = Z.var, data = ds)
+
+Fail-safe N Calculation Using the Rosenthal Approach
+
+Observed Significance Level: <.0001
+Target Significance Level:   0.05
+
+Fail-safe N: 2151
+
+
+> # #### Gender Moderator ####
+> # # % female 
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
+> # gender_MM_RE
+> # 
+> # #### Caucasian Moderator ####
+> # # % Caucasian 
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
+> # caucasian_MM_RE
+> # 
+> # #### Age Moderator ####
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
+> # age_MM_RE
+> 
+> #### EXTRA: Back Transform ####
+> ds$back.transform <- (exp(2*ds$Z) - 1) / (exp(2*ds$Z) + 1)
+
+> #### Clean evironment #### 
+> rm(list = ls())
+
+> ######################## 6 - STD HISTORY ######################## 
+> 
+> #### Data Prep ####
+> 
+> # pull data 
+> fullset = read.csv("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/dataset.csv", header = T, sep = ",")
+
+> # set working directoy to subfolder - holds plots 
+> setwd("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/6_STDHistory")
+
+> # subset RSB
+> ds = subset(fullset, rsbtype == 6)
+
+> # Fisher's Z transformation
+> ds$Z <- .5*log((1 + ds$r) / (1 - ds$r))
+
+> # Variance of Fisher's Z
+> ds$Z.var <- 1 / (ds$n - 3)
+
+> ####  Forest Plot ####
+> 
+> # Create and print default forest plot
+> # yi: effect size
+> # vi: effect size variance
+> # data: data set 
+> 
+> forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
+
+> forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
+
+> ##################### INDEPENDENT RE MODEL ##################### 
+> 
+> 
+> 
+> 
+> 
+> #### RE Model Full Model #### 
+> RE.model <- rma.uni(yi = Z, vi = Z.var, data = ds, method = "REML")
+
+> RE.model
+
+Random-Effects Model (k = 2; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0 (SE = 0.0137)
+tau (square root of estimated tau^2 value):      0
+I^2 (total heterogeneity / total variability):   0.00%
+H^2 (total variability / sampling variability):  1.00
+
+Test for Heterogeneity:
+Q(df = 1) = 0.1286, p-val = 0.7199
+
+Model Results:
+
+estimate      se     zval    pval    ci.lb   ci.ub 
+ -0.0086  0.0690  -0.1243  0.9011  -0.1438  0.1267    
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> #### back transformation ####
+> RE_r <- (exp(2*RE.model$beta) - 1) / (exp(2*RE.model$beta) + 1)
+
+> RE_r
+                [,1]
+intrcpt -0.008575221
+
+> #### Sensitivity Analysis ####
+> # Print various influence point measures
+> options(max.print=1000000)
+
+> influence(RE.model)
+
+  rstudent  dffits cook.d  cov.r tau2.del QE.del    hat  weight    dfbs inf 
+1   0.3587  0.3106 0.0965 1.7500   0.0000 0.0000 0.4286 42.8571  0.3106     
+2  -0.3587 -0.4141 0.1715 2.3333   0.0000 0.0000 0.5714 57.1429 -0.4141     
+
+
+> # Plots of influence measures
+> plot(influence(RE.model))
+
+> leave1out(RE.model)
+
+  estimate     se    zval   pval   ci.lb  ci.ub      Q     Qp   tau2     I2     H2 
+1  -0.0300 0.0913 -0.3287 0.7424 -0.2089 0.1489 0.0000 1.0000 0.0000 0.0000 1.0000 
+2   0.0200 0.1054  0.1898 0.8495 -0.1866 0.2266 0.0000 1.0000 0.0000 0.0000 1.0000 
+
+
+> #### Publication Bias ####
+> 
+> #Funnel Plots 
+> 
+> par(mfrow = c(1,1))
+
+> # Funnel plot w/ SE as vertical axis
+> funnel(RE.model)
+
+> # Egger's Regression Test
+> regtest(x = ds$Z, vi = ds$Z.var, model = "lm")
+
+Regression Test for Funnel Plot Asymmetry
+
+model:     weighted regression with multiplicative dispersion
+predictor: standard error
+
+test for funnel plot asymmetry: t = NaN, df = 0, p = NA
+
+
+> # Basic trim-and-fill code
+> trimfill(RE.model, side = "right", verbose = T)
+
+Iteration: 1    missing = 0  beta = -0.0086
+
+Estimated number of missing studies on the right side: 0 (SE = 1.2081)
+
+Random-Effects Model (k = 2; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0 (SE = 0.0137)
+tau (square root of estimated tau^2 value):      0
+I^2 (total heterogeneity / total variability):   0.00%
+H^2 (total variability / sampling variability):  1.00
+
+Test for Heterogeneity:
+Q(df = 1) = 0.1286, p-val = 0.7199
+
+Model Results:
+
+estimate      se     zval    pval    ci.lb   ci.ub 
+ -0.0086  0.0690  -0.1243  0.9011  -0.1438  0.1267    
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> trimfill(RE.model, side = "left", verbose = T)
+
+Iteration: 1    missing = 1  beta = -0.0086
+Iteration: 2    missing = 1  beta = -0.0300
+
+Estimated number of missing studies on the left side: 1 (SE = 1.5467)
+
+Random-Effects Model (k = 3; tau^2 estimator: REML)
+
+tau^2 (estimated amount of total heterogeneity): 0 (SE = 0.0101)
+tau (square root of estimated tau^2 value):      0
+I^2 (total heterogeneity / total variability):   0.00%
+H^2 (total variability / sampling variability):  1.00
+
+Test for Heterogeneity:
+Q(df = 2) = 0.4502, p-val = 0.7984
+
+Model Results:
+
+estimate      se     zval    pval    ci.lb   ci.ub 
+ -0.0300  0.0577  -0.5198  0.6032  -0.1432  0.0831    
+
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+
+> # Plot both versions of trim-and-fill (optional)
+> par(mfrow = c(2,1))
+
+> funnel(trimfill(RE.model, side = "right"), main = "Right-Side Imputation")
+
+> funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
+
+> # Fail safe N 
+> fsn(yi = Z, vi = Z.var, data = ds)
+
+Fail-safe N Calculation Using the Rosenthal Approach
+
+Observed Significance Level: 0.4609
+Target Significance Level:   0.05
+
+Fail-safe N: 0
+
+
+> # #### Gender Moderator ####
+> # # % female 
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
+> # gender_MM_RE
+> # 
+> # #### Caucasian Moderator ####
+> # # % Caucasian 
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
+> # caucasian_MM_RE
+> # 
+> # #### Age Moderator ####
+> # 
+> # # Scatterplot without weights
+> # plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
+> # 
+> # # Mixed-effects meta-regression
+> # age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
+> # age_MM_RE
+> 
+> #### EXTRA: Back Transform ####
+> ds$back.transform <- (exp(2*ds$Z) - 1) / (exp(2*ds$Z) + 1)
+
+> #### Clean evironment #### 
+> rm(list = ls())
+
+> # Normal output
+> sink(file = NULL, type = c("output", "message"))

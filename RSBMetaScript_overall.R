@@ -26,8 +26,8 @@ library(robumeta)
 
 #### Data Prep #### 
 
-ds = read.csv("/Volumes/GoogleDrive/My Drive/RSB Meta-Analysis/RSB_Meta/Analyses/dataset.csv", header = T, sep = ",")
-setwd("/Volumes/GoogleDrive/My Drive/RSB Meta-Analysis/RSB_Meta/Analyses/Overall")
+ds = read.csv("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/dataset.csv", header = T, sep = ",")
+setwd("~/git/RSBMeta")
 
 
 # rsb type subsetting
@@ -58,8 +58,66 @@ ds$Z.var <- 1 / (ds$n - 3)
 # vi: effect size variance
 # data: data set 
 
-forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
-forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
+##################### Multivariate/Dependency Analyses ##################### 
+#### RE model ####
+# RE model in robumeta with correlational weights
+model_rve_c <- robu(Z ~ 1, 
+                    data = ds,
+                    studynum = id,
+                    var.eff.size = Z.var, 
+                    modelweights = "CORR",
+                    rho = .80)
+model_rve_c
+
+
+# Checking model sensitivity of correlational weights (i.e., choice of rho)
+sensitivity(model_rve_c)
+
+
+# forest plot
+jpeg('Forest_Plot.jpg', width = 610, height = 880)
+forest.robu(model_rve_c,
+            es.lab = "rsbtype",
+            study.lab = "id")
+dev.off()
+
+#### multivariate moderator ####
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# gender
+
+model_rve_c_female <- robu(Z ~ female, 
+                           data = ds,
+                           studynum = id,
+                           var.eff.size = Z.var, 
+                           modelweights = "CORR",
+                           rho = .80)
+model_rve_c_female
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# race
+
+model_rve_c_caucasian <- robu(Z ~ caucasian, 
+                              data = ds,
+                              studynum = id,
+                              var.eff.size = Z.var, 
+                              modelweights = "CORR",
+                              rho = .80)
+model_rve_c_caucasian
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# age
+
+model_rve_c_age <- robu(Z ~ age.m, 
+                        data = ds,
+                        studynum = id,
+                        var.eff.size = Z.var, 
+                        modelweights = "CORR",
+                        rho = .80)
+model_rve_c_age
+
+
+##################### INDEPENDENT RE MODEL ##################### 
 
 #### RE Model Full Model #### 
 RE.model <- rma.uni(yi = Z, vi = Z.var, data = ds, method = "REML")
@@ -104,95 +162,9 @@ funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
 # Fail safe N 
 fsn(yi = Z, vi = Z.var, data = ds)
 
-#### Gender Moderator ####
-# % female 
-
-# Scatterplot without weights
-plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
-gender_MM_RE
-
-#### Caucasian Moderator ####
-# % Caucasian 
-
-# Scatterplot without weights
-plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
-caucasian_MM_RE
-
-#### Age Moderator ####
-
-# Scatterplot without weights
-plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
-age_MM_RE
-
 #### EXTRA: Back Transform ####
 ds$back.transform <- (exp(2*ds$Z) - 1) / (exp(2*ds$Z) + 1)
 
 
 
-#### Multivariate/Dependency Analyses ####
 
-#### RE model ####
-# RE model in robumeta with correlational weights
-model_rve_c <- robu(Z ~ 1, 
-                    data = ds,
-                    studynum = id,
-                    var.eff.size = Z.var, 
-                    modelweights = "CORR",
-                    rho = .80)
-model_rve_c
-
-
-# Checking model sensitivity of correlational weights (i.e., choice of rho)
-sensitivity(model_rve_c)
-
-
-# forest plot
-jpeg('Forest_Plot.jpg', width = 610, height = 880)
-forest.robu(model_rve_c,
-            es.lab = "rsbtype",
-            study.lab = "id")
-dev.off()
-
-#### multivariate moderator ####
-
-# Conditional RE model in robumeta with one moderator using correlational weights 
-# gender
-
-model_rve_c_female <- robu(Z ~ female, 
-                      data = ds,
-                      studynum = id,
-                      var.eff.size = Z.var, 
-                      modelweights = "CORR",
-                      rho = .80)
-model_rve_c_female
-
-# Conditional RE model in robumeta with one moderator using correlational weights 
-# race
-
-model_rve_c_caucasian <- robu(Z ~ caucasian, 
-                           data = ds,
-                           studynum = id,
-                           var.eff.size = Z.var, 
-                           modelweights = "CORR",
-                           rho = .80)
-model_rve_c_caucasian
-
-# Conditional RE model in robumeta with one moderator using correlational weights 
-# age
-
-model_rve_c_age <- robu(Z ~ age.m, 
-                              data = ds,
-                              studynum = id,
-                              var.eff.size = Z.var, 
-                              modelweights = "CORR",
-                              rho = .80)
-model_rve_c_age

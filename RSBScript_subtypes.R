@@ -1,7 +1,19 @@
+# Clean environment
+rm(list = ls())
+# Clear Console
+cat("\014")
+
 # Load library
 library(metafor)
 library(plotly)
 library(robumeta)
+
+#setwd("~/git/RSBMeta")
+filePath <- "~/git/RSBMeta/Analyses/20-08-2020/output.txt"
+
+# Redirect console to a log file
+outputFile <- file(filePath, "w")
+sink(outputFile, append=FALSE, type= c("output", "message"), split = TRUE)
 
 #### Description ####
 # rsbtype
@@ -29,10 +41,11 @@ library(robumeta)
 #### Data Prep ####
 
 # pull data 
-fullset = read.csv("/Volumes/GoogleDrive/My Drive/RSB Meta-Analysis/RSB_Meta/Analyses/dataset.csv", header = T, sep = ",")
+fullset = read.csv("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/dataset.csv", header = T, sep = ",")
+
 
 # set working directoy to subfolder - holds plots 
-setwd("/Volumes/GoogleDrive/My Drive/RSB Meta-Analysis/RSB_Meta/Analyses/1_UnprotectedSex")
+setwd("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/1_UnprotectedSex")
 
 # subset RSB
 ds = subset(fullset, rsbtype == 1)
@@ -53,6 +66,69 @@ ds$Z.var <- 1 / (ds$n - 3)
 forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
 forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
 
+
+##################### Multivariate/Dependency Analyses ##################### 
+
+#### RE model ####
+# RE model in robumeta with correlational weights
+model_rve_c <- robu(Z ~ 1, 
+                    data = ds,
+                    studynum = id,
+                    var.eff.size = Z.var, 
+                    modelweights = "CORR",
+                    rho = .80)
+model_rve_c
+
+
+# Checking model sensitivity of correlational weights (i.e., choice of rho)
+sensitivity(model_rve_c)
+
+
+# forest plot
+jpeg('Forest_Plot.jpg', width = 610, height = 880)
+forest.robu(model_rve_c,
+            es.lab = "rsbtype",
+            study.lab = "id")
+dev.off()
+
+#### multivariate moderator ####
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# gender
+
+model_rve_c_female <- robu(Z ~ female, 
+                           data = ds,
+                           studynum = id,
+                           var.eff.size = Z.var, 
+                           modelweights = "CORR",
+                           rho = .80)
+model_rve_c_female
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# race
+
+model_rve_c_caucasian <- robu(Z ~ caucasian, 
+                              data = ds,
+                              studynum = id,
+                              var.eff.size = Z.var, 
+                              modelweights = "CORR",
+                              rho = .80)
+model_rve_c_caucasian
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# age
+
+model_rve_c_age <- robu(Z ~ age.m, 
+                        data = ds,
+                        studynum = id,
+                        var.eff.size = Z.var, 
+                        modelweights = "CORR",
+                        rho = .80)
+model_rve_c_age
+
+
+##################### INDEPENDENT RE MODEL ##################### 
+
 #### RE Model Full Model #### 
 RE.model <- rma.uni(yi = Z, vi = Z.var, data = ds, method = "REML")
 RE.model
@@ -96,34 +172,34 @@ funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
 # Fail safe N 
 fsn(yi = Z, vi = Z.var, data = ds)
 
-#### Gender Moderator ####
-# % female 
-
-# Scatterplot without weights
-plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
-gender_MM_RE
-
-#### Caucasian Moderator ####
-# % Caucasian 
-
-# Scatterplot without weights
-plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
-caucasian_MM_RE
-
-#### Age Moderator ####
-
-# Scatterplot without weights
-plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
-age_MM_RE
+# #### Gender Moderator ####
+# # % female 
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
+# gender_MM_RE
+# 
+# #### Caucasian Moderator ####
+# # % Caucasian 
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
+# caucasian_MM_RE
+# 
+# #### Age Moderator ####
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
+# age_MM_RE
 
 #### EXTRA: Back Transform ####
 ds$back.transform <- (exp(2*ds$Z) - 1) / (exp(2*ds$Z) + 1)
@@ -140,10 +216,11 @@ rm(list = ls())
 #### Data Prep ####
 
 # pull data 
-fullset = read.csv("/Volumes/GoogleDrive/My Drive/RSB Meta-Analysis/RSB_Meta/Analyses/dataset.csv", header = T, sep = ",")
+fullset = read.csv("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/dataset.csv", header = T, sep = ",")
+
 
 # set working directoy to subfolder - holds plots 
-setwd("/Volumes/GoogleDrive/My Drive/RSB Meta-Analysis/RSB_Meta/Analyses/2_MultipleLTPartners")
+setwd("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/2_MultipleLTPartners")
 
 # subset RSB
 ds = subset(fullset, rsbtype == 2)
@@ -164,6 +241,68 @@ ds$Z.var <- 1 / (ds$n - 3)
 forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
 forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
 
+##################### Multivariate/Dependency Analyses ##################### 
+
+#### RE model ####
+# RE model in robumeta with correlational weights
+model_rve_c <- robu(Z ~ 1, 
+                    data = ds,
+                    studynum = id,
+                    var.eff.size = Z.var, 
+                    modelweights = "CORR",
+                    rho = .80)
+model_rve_c
+
+
+# Checking model sensitivity of correlational weights (i.e., choice of rho)
+sensitivity(model_rve_c)
+
+
+# forest plot
+jpeg('Forest_Plot.jpg', width = 610, height = 880)
+forest.robu(model_rve_c,
+            es.lab = "rsbtype",
+            study.lab = "id")
+dev.off()
+
+#### multivariate moderator ####
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# gender
+
+model_rve_c_female <- robu(Z ~ female, 
+                           data = ds,
+                           studynum = id,
+                           var.eff.size = Z.var, 
+                           modelweights = "CORR",
+                           rho = .80)
+model_rve_c_female
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# race
+
+model_rve_c_caucasian <- robu(Z ~ caucasian, 
+                              data = ds,
+                              studynum = id,
+                              var.eff.size = Z.var, 
+                              modelweights = "CORR",
+                              rho = .80)
+model_rve_c_caucasian
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# age
+
+model_rve_c_age <- robu(Z ~ age.m, 
+                        data = ds,
+                        studynum = id,
+                        var.eff.size = Z.var, 
+                        modelweights = "CORR",
+                        rho = .80)
+model_rve_c_age
+
+
+##################### INDEPENDENT RE MODEL ##################### 
+
 #### RE Model Full Model #### 
 RE.model <- rma.uni(yi = Z, vi = Z.var, data = ds, method = "REML")
 RE.model
@@ -207,34 +346,34 @@ funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
 # Fail safe N 
 fsn(yi = Z, vi = Z.var, data = ds)
 
-#### Gender Moderator ####
-# % female 
-
-# Scatterplot without weights
-plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
-gender_MM_RE
-
-#### Caucasian Moderator ####
-# % Caucasian 
-
-# Scatterplot without weights
-plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
-caucasian_MM_RE
-
-#### Age Moderator ####
-
-# Scatterplot without weights
-plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
-age_MM_RE
+# #### Gender Moderator ####
+# # % female 
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
+# gender_MM_RE
+# 
+# #### Caucasian Moderator ####
+# # % Caucasian 
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
+# caucasian_MM_RE
+# 
+# #### Age Moderator ####
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
+# age_MM_RE
 
 #### EXTRA: Back Transform ####
 ds$back.transform <- (exp(2*ds$Z) - 1) / (exp(2*ds$Z) + 1)
@@ -251,10 +390,11 @@ rm(list = ls())
 #### Data Prep ####
 
 # pull data 
-fullset = read.csv("/Volumes/GoogleDrive/My Drive/RSB Meta-Analysis/RSB_Meta/Analyses/dataset.csv", header = T, sep = ",")
+fullset = read.csv("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/dataset.csv", header = T, sep = ",")
+
 
 # set working directoy to subfolder - holds plots 
-setwd("/Volumes/GoogleDrive/My Drive/RSB Meta-Analysis/RSB_Meta/Analyses/3_HazardousSex")
+setwd("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/3_HazardousSex")
 
 # subset RSB
 ds = subset(fullset, rsbtype == 3)
@@ -275,6 +415,69 @@ ds$Z.var <- 1 / (ds$n - 3)
 forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
 forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
 
+##################### Multivariate/Dependency Analyses ##################### 
+
+#### RE model ####
+# RE model in robumeta with correlational weights
+model_rve_c <- robu(Z ~ 1, 
+                    data = ds,
+                    studynum = id,
+                    var.eff.size = Z.var, 
+                    modelweights = "CORR",
+                    rho = .80)
+model_rve_c
+
+
+# Checking model sensitivity of correlational weights (i.e., choice of rho)
+sensitivity(model_rve_c)
+
+
+# forest plot
+jpeg('Forest_Plot.jpg', width = 610, height = 880)
+forest.robu(model_rve_c,
+            es.lab = "rsbtype",
+            study.lab = "id")
+dev.off()
+
+#### multivariate moderator ####
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# gender
+
+model_rve_c_female <- robu(Z ~ female, 
+                           data = ds,
+                           studynum = id,
+                           var.eff.size = Z.var, 
+                           modelweights = "CORR",
+                           rho = .80)
+model_rve_c_female
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# race
+
+model_rve_c_caucasian <- robu(Z ~ caucasian, 
+                              data = ds,
+                              studynum = id,
+                              var.eff.size = Z.var, 
+                              modelweights = "CORR",
+                              rho = .80)
+model_rve_c_caucasian
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# age
+
+model_rve_c_age <- robu(Z ~ age.m, 
+                        data = ds,
+                        studynum = id,
+                        var.eff.size = Z.var, 
+                        modelweights = "CORR",
+                        rho = .80)
+model_rve_c_age
+
+
+##################### INDEPENDENT RE MODEL ##################### 
+
+
 #### RE Model Full Model #### 
 RE.model <- rma.uni(yi = Z, vi = Z.var, data = ds, method = "REML")
 RE.model
@@ -318,34 +521,34 @@ funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
 # Fail safe N 
 fsn(yi = Z, vi = Z.var, data = ds)
 
-#### Gender Moderator ####
-# % female 
-
-# Scatterplot without weights
-plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
-gender_MM_RE
-
-#### Caucasian Moderator ####
-# % Caucasian 
-
-# Scatterplot without weights
-plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
-caucasian_MM_RE
-
-#### Age Moderator ####
-
-# Scatterplot without weights
-plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
-age_MM_RE
+# #### Gender Moderator ####
+# # % female 
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
+# gender_MM_RE
+# 
+# #### Caucasian Moderator ####
+# # % Caucasian 
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
+# caucasian_MM_RE
+# 
+# #### Age Moderator ####
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
+# age_MM_RE
 
 #### EXTRA: Back Transform ####
 ds$back.transform <- (exp(2*ds$Z) - 1) / (exp(2*ds$Z) + 1)
@@ -362,10 +565,11 @@ rm(list = ls())
 #### Data Prep ####
 
 # pull data 
-fullset = read.csv("/Volumes/GoogleDrive/My Drive/RSB Meta-Analysis/RSB_Meta/Analyses/dataset.csv", header = T, sep = ",")
+fullset = read.csv("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/dataset.csv", header = T, sep = ",")
+
 
 # set working directoy to subfolder - holds plots 
-setwd("/Volumes/GoogleDrive/My Drive/RSB Meta-Analysis/RSB_Meta/Analyses/4_SexInitiation")
+setwd("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/4_SexInitiation")
 
 # subset RSB
 ds = subset(fullset, rsbtype == 4)
@@ -386,6 +590,70 @@ ds$Z.var <- 1 / (ds$n - 3)
 forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
 forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
 
+##################### Multivariate/Dependency Analyses ##################### 
+
+#### RE model ####
+# RE model in robumeta with correlational weights
+model_rve_c <- robu(Z ~ 1, 
+                    data = ds,
+                    studynum = id,
+                    var.eff.size = Z.var, 
+                    modelweights = "CORR",
+                    rho = .80)
+model_rve_c
+
+
+# Checking model sensitivity of correlational weights (i.e., choice of rho)
+sensitivity(model_rve_c)
+
+
+# forest plot
+jpeg('Forest_Plot.jpg', width = 610, height = 880)
+forest.robu(model_rve_c,
+            es.lab = "rsbtype",
+            study.lab = "id")
+dev.off()
+
+#### multivariate moderator ####
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# gender
+
+model_rve_c_female <- robu(Z ~ female, 
+                           data = ds,
+                           studynum = id,
+                           var.eff.size = Z.var, 
+                           modelweights = "CORR",
+                           rho = .80)
+model_rve_c_female
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# race
+
+model_rve_c_caucasian <- robu(Z ~ caucasian, 
+                              data = ds,
+                              studynum = id,
+                              var.eff.size = Z.var, 
+                              modelweights = "CORR",
+                              rho = .80)
+model_rve_c_caucasian
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# age
+
+model_rve_c_age <- robu(Z ~ age.m, 
+                        data = ds,
+                        studynum = id,
+                        var.eff.size = Z.var, 
+                        modelweights = "CORR",
+                        rho = .80)
+model_rve_c_age
+
+
+##################### INDEPENDENT RE MODEL ##################### 
+
+
+
 #### RE Model Full Model #### 
 RE.model <- rma.uni(yi = Z, vi = Z.var, data = ds, method = "REML")
 RE.model
@@ -429,34 +697,34 @@ funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
 # Fail safe N 
 fsn(yi = Z, vi = Z.var, data = ds)
 
-#### Gender Moderator ####
-# % female 
-
-# Scatterplot without weights
-plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
-gender_MM_RE
-
-#### Caucasian Moderator ####
-# % Caucasian 
-
-# Scatterplot without weights
-plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
-caucasian_MM_RE
-
-#### Age Moderator ####
-
-# Scatterplot without weights
-plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
-age_MM_RE
+# #### Gender Moderator ####
+# # % female 
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
+# gender_MM_RE
+# 
+# #### Caucasian Moderator ####
+# # % Caucasian 
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
+# caucasian_MM_RE
+# 
+# #### Age Moderator ####
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
+# age_MM_RE
 
 #### EXTRA: Back Transform ####
 ds$back.transform <- (exp(2*ds$Z) - 1) / (exp(2*ds$Z) + 1)
@@ -473,10 +741,11 @@ rm(list = ls())
 #### Data Prep ####
 
 # pull data 
-fullset = read.csv("/Volumes/GoogleDrive/My Drive/RSB Meta-Analysis/RSB_Meta/Analyses/dataset.csv", header = T, sep = ",")
+fullset = read.csv("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/dataset.csv", header = T, sep = ",")
+
 
 # set working directoy to subfolder - holds plots 
-setwd("/Volumes/GoogleDrive/My Drive/RSB Meta-Analysis/RSB_Meta/Analyses/5_VirginityStatus")
+setwd("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/5_VirginityStatus")
 
 # subset RSB
 ds = subset(fullset, rsbtype == 5)
@@ -497,6 +766,71 @@ ds$Z.var <- 1 / (ds$n - 3)
 forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
 forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
 
+##################### Multivariate/Dependency Analyses ##################### 
+
+#### RE model ####
+# RE model in robumeta with correlational weights
+model_rve_c <- robu(Z ~ 1, 
+                    data = ds,
+                    studynum = id,
+                    var.eff.size = Z.var, 
+                    modelweights = "CORR",
+                    rho = .80)
+model_rve_c
+
+
+# Checking model sensitivity of correlational weights (i.e., choice of rho)
+sensitivity(model_rve_c)
+
+
+# forest plot
+jpeg('Forest_Plot.jpg', width = 610, height = 880)
+forest.robu(model_rve_c,
+            es.lab = "rsbtype",
+            study.lab = "id")
+dev.off()
+
+#### multivariate moderator ####
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# gender
+
+model_rve_c_female <- robu(Z ~ female, 
+                           data = ds,
+                           studynum = id,
+                           var.eff.size = Z.var, 
+                           modelweights = "CORR",
+                           rho = .80)
+model_rve_c_female
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# race
+
+model_rve_c_caucasian <- robu(Z ~ caucasian, 
+                              data = ds,
+                              studynum = id,
+                              var.eff.size = Z.var, 
+                              modelweights = "CORR",
+                              rho = .80)
+model_rve_c_caucasian
+
+# Conditional RE model in robumeta with one moderator using correlational weights 
+# age
+
+model_rve_c_age <- robu(Z ~ age.m, 
+                        data = ds,
+                        studynum = id,
+                        var.eff.size = Z.var, 
+                        modelweights = "CORR",
+                        rho = .80)
+model_rve_c_age
+
+
+##################### INDEPENDENT RE MODEL ##################### 
+
+
+
+
 #### RE Model Full Model #### 
 RE.model <- rma.uni(yi = Z, vi = Z.var, data = ds, method = "REML")
 RE.model
@@ -540,34 +874,34 @@ funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
 # Fail safe N 
 fsn(yi = Z, vi = Z.var, data = ds)
 
-#### Gender Moderator ####
-# % female 
-
-# Scatterplot without weights
-plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
-gender_MM_RE
-
-#### Caucasian Moderator ####
-# % Caucasian 
-
-# Scatterplot without weights
-plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
-caucasian_MM_RE
-
-#### Age Moderator ####
-
-# Scatterplot without weights
-plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
-age_MM_RE
+# #### Gender Moderator ####
+# # % female 
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
+# gender_MM_RE
+# 
+# #### Caucasian Moderator ####
+# # % Caucasian 
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
+# caucasian_MM_RE
+# 
+# #### Age Moderator ####
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
+# age_MM_RE
 
 #### EXTRA: Back Transform ####
 ds$back.transform <- (exp(2*ds$Z) - 1) / (exp(2*ds$Z) + 1)
@@ -584,10 +918,11 @@ rm(list = ls())
 #### Data Prep ####
 
 # pull data 
-fullset = read.csv("/Volumes/GoogleDrive/My Drive/RSB Meta-Analysis/RSB_Meta/Analyses/dataset.csv", header = T, sep = ",")
+fullset = read.csv("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/dataset.csv", header = T, sep = ",")
+
 
 # set working directoy to subfolder - holds plots 
-setwd("/Volumes/GoogleDrive/My Drive/RSB Meta-Analysis/RSB_Meta/Analyses/6_STDHistory")
+setwd("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/6_STDHistory")
 
 # subset RSB
 ds = subset(fullset, rsbtype == 6)
@@ -608,6 +943,13 @@ ds$Z.var <- 1 / (ds$n - 3)
 forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
 forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
 
+
+##################### INDEPENDENT RE MODEL ##################### 
+
+
+
+
+
 #### RE Model Full Model #### 
 RE.model <- rma.uni(yi = Z, vi = Z.var, data = ds, method = "REML")
 RE.model
@@ -651,34 +993,34 @@ funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
 # Fail safe N 
 fsn(yi = Z, vi = Z.var, data = ds)
 
-#### Gender Moderator ####
-# % female 
-
-# Scatterplot without weights
-plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
-gender_MM_RE
-
-#### Caucasian Moderator ####
-# % Caucasian 
-
-# Scatterplot without weights
-plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
-caucasian_MM_RE
-
-#### Age Moderator ####
-
-# Scatterplot without weights
-plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
-
-# Mixed-effects meta-regression
-age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
-age_MM_RE
+# #### Gender Moderator ####
+# # % female 
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~female, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# gender_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ female, data = ds)
+# gender_MM_RE
+# 
+# #### Caucasian Moderator ####
+# # % Caucasian 
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~caucasian, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# caucasian_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ caucasian, data = ds)
+# caucasian_MM_RE
+# 
+# #### Age Moderator ####
+# 
+# # Scatterplot without weights
+# plot_ly(ds, x = ~age.m, y = ~Z, text = ~id, type = 'scatter')
+# 
+# # Mixed-effects meta-regression
+# age_MM_RE <- rma(yi = Z, vi = Z.var, mods = ~ age.m, data = ds)
+# age_MM_RE
 
 #### EXTRA: Back Transform ####
 ds$back.transform <- (exp(2*ds$Z) - 1) / (exp(2*ds$Z) + 1)
@@ -688,3 +1030,5 @@ ds$back.transform <- (exp(2*ds$Z) - 1) / (exp(2*ds$Z) + 1)
 #### Clean evironment #### 
 rm(list = ls())
 
+# Normal output
+sink(file = NULL, type = c("output", "message"))
