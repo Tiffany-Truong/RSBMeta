@@ -1,3 +1,7 @@
+#### Run script using command - paste to console
+# source("RSBScript_subtypes.R", echo=TRUE, max.deparse.length=10000)
+
+
 # Clean environment
 rm(list = ls())
 # Clear Console
@@ -8,8 +12,7 @@ library(metafor)
 library(plotly)
 library(robumeta)
 
-#setwd("~/git/RSBMeta")
-filePath <- "~/git/RSBMeta/Analyses/20-08-2020/output.txt"
+filePath <- "~/git/RSBMeta/Analyses/20-08-2020/Subtypesoutput.txt"
 
 # Redirect console to a log file
 outputFile <- file(filePath, "w")
@@ -63,9 +66,10 @@ ds$Z.var <- 1 / (ds$n - 3)
 # vi: effect size variance
 # data: data set 
 
+jpeg('Forest_1.jpg', width = 610, height = 880)
 forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
 forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
-
+dev.off()
 
 ##################### Multivariate/Dependency Analyses ##################### 
 
@@ -85,7 +89,7 @@ sensitivity(model_rve_c)
 
 
 # forest plot
-jpeg('Forest_Plot.jpg', width = 610, height = 880)
+jpeg('Forest_Plot_multivariate_1.jpg', width = 610, height = 880)
 forest.robu(model_rve_c,
             es.lab = "rsbtype",
             study.lab = "id")
@@ -143,7 +147,10 @@ options(max.print=1000000)
 influence(RE.model)
 
 # Plots of influence measures
+jpeg('influence_1.jpg', width = 610, height = 880)
 plot(influence(RE.model))
+dev.off()
+
 
 leave1out(RE.model)
 
@@ -154,7 +161,10 @@ leave1out(RE.model)
 par(mfrow = c(1,1))
 
 # Funnel plot w/ SE as vertical axis
+jpeg('funnel_1.jpg', width = 610, height = 880)
 funnel(RE.model)
+dev.off()
+
 
 # Egger's Regression Test
 regtest(x = ds$Z, vi = ds$Z.var, model = "lm")
@@ -165,9 +175,12 @@ trimfill(RE.model, side = "left", verbose = T)
 
 
 # Plot both versions of trim-and-fill (optional)
-par(mfrow = c(2,1))
+par(mfrow = c(2,1), jpeg('tnf_1.jpg'))
+
 funnel(trimfill(RE.model, side = "right"), main = "Right-Side Imputation")
 funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
+dev.off()
+
 
 # Fail safe N 
 fsn(yi = Z, vi = Z.var, data = ds)
@@ -238,8 +251,10 @@ ds$Z.var <- 1 / (ds$n - 3)
 # vi: effect size variance
 # data: data set 
 
+jpeg('Forest_2.jpg', width = 610, height = 880)
 forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
 forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
+dev.off()
 
 ##################### Multivariate/Dependency Analyses ##################### 
 
@@ -259,12 +274,11 @@ sensitivity(model_rve_c)
 
 
 # forest plot
-jpeg('Forest_Plot.jpg', width = 610, height = 880)
+jpeg('Forest_Plot_multivariate_2.jpg', width = 610, height = 880)
 forest.robu(model_rve_c,
             es.lab = "rsbtype",
             study.lab = "id")
 dev.off()
-
 #### multivariate moderator ####
 
 # Conditional RE model in robumeta with one moderator using correlational weights 
@@ -317,7 +331,9 @@ options(max.print=1000000)
 influence(RE.model)
 
 # Plots of influence measures
+jpeg('influence_2.jpg', width = 610, height = 880)
 plot(influence(RE.model))
+dev.off()
 
 leave1out(RE.model)
 
@@ -328,7 +344,9 @@ leave1out(RE.model)
 par(mfrow = c(1,1))
 
 # Funnel plot w/ SE as vertical axis
+jpeg('funnel_2.jpg', width = 610, height = 880)
 funnel(RE.model)
+dev.off()
 
 # Egger's Regression Test
 regtest(x = ds$Z, vi = ds$Z.var, model = "lm")
@@ -339,9 +357,12 @@ trimfill(RE.model, side = "left", verbose = T)
 
 
 # Plot both versions of trim-and-fill (optional)
-par(mfrow = c(2,1))
+par(mfrow = c(2,1), jpeg('tnf_2.jpg'))
+
 funnel(trimfill(RE.model, side = "right"), main = "Right-Side Imputation")
 funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
+dev.off()
+
 
 # Fail safe N 
 fsn(yi = Z, vi = Z.var, data = ds)
@@ -412,8 +433,10 @@ ds$Z.var <- 1 / (ds$n - 3)
 # vi: effect size variance
 # data: data set 
 
+jpeg('Forest_3.jpg', width = 610, height = 880)
 forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
 forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
+dev.off()
 
 ##################### Multivariate/Dependency Analyses ##################### 
 
@@ -433,7 +456,7 @@ sensitivity(model_rve_c)
 
 
 # forest plot
-jpeg('Forest_Plot.jpg', width = 610, height = 880)
+jpeg('Forest_Plot_multivariate_3.jpg', width = 610, height = 880)
 forest.robu(model_rve_c,
             es.lab = "rsbtype",
             study.lab = "id")
@@ -492,7 +515,10 @@ options(max.print=1000000)
 influence(RE.model)
 
 # Plots of influence measures
+jpeg('influence_3.jpg', width = 610, height = 880)
 plot(influence(RE.model))
+dev.off()
+
 
 leave1out(RE.model)
 
@@ -503,7 +529,10 @@ leave1out(RE.model)
 par(mfrow = c(1,1))
 
 # Funnel plot w/ SE as vertical axis
+jpeg('funnel_3.jpg', width = 610, height = 880)
 funnel(RE.model)
+dev.off()
+
 
 # Egger's Regression Test
 regtest(x = ds$Z, vi = ds$Z.var, model = "lm")
@@ -514,9 +543,12 @@ trimfill(RE.model, side = "left", verbose = T)
 
 
 # Plot both versions of trim-and-fill (optional)
-par(mfrow = c(2,1))
+par(mfrow = c(2,1), jpeg('tnf_3.jpg'))
+
 funnel(trimfill(RE.model, side = "right"), main = "Right-Side Imputation")
 funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
+dev.off()
+
 
 # Fail safe N 
 fsn(yi = Z, vi = Z.var, data = ds)
@@ -587,8 +619,10 @@ ds$Z.var <- 1 / (ds$n - 3)
 # vi: effect size variance
 # data: data set 
 
+jpeg('Forest_4.jpg', width = 610, height = 880)
 forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
 forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
+dev.off()
 
 ##################### Multivariate/Dependency Analyses ##################### 
 
@@ -607,12 +641,14 @@ model_rve_c
 sensitivity(model_rve_c)
 
 
+
 # forest plot
-jpeg('Forest_Plot.jpg', width = 610, height = 880)
+jpeg('Forest_Plot_multivariate_4.jpg', width = 610, height = 880)
 forest.robu(model_rve_c,
             es.lab = "rsbtype",
             study.lab = "id")
 dev.off()
+
 
 #### multivariate moderator ####
 
@@ -668,7 +704,9 @@ options(max.print=1000000)
 influence(RE.model)
 
 # Plots of influence measures
+jpeg('influence_4.jpg', width = 610, height = 880)
 plot(influence(RE.model))
+dev.off()
 
 leave1out(RE.model)
 
@@ -679,7 +717,9 @@ leave1out(RE.model)
 par(mfrow = c(1,1))
 
 # Funnel plot w/ SE as vertical axis
+jpeg('funnel_4.jpg', width = 610, height = 880)
 funnel(RE.model)
+dev.off()
 
 # Egger's Regression Test
 regtest(x = ds$Z, vi = ds$Z.var, model = "lm")
@@ -690,9 +730,11 @@ trimfill(RE.model, side = "left", verbose = T)
 
 
 # Plot both versions of trim-and-fill (optional)
-par(mfrow = c(2,1))
+par(mfrow = c(2,1), jpeg('tnf_4.jpg'))
+
 funnel(trimfill(RE.model, side = "right"), main = "Right-Side Imputation")
 funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
+dev.off()
 
 # Fail safe N 
 fsn(yi = Z, vi = Z.var, data = ds)
@@ -763,8 +805,10 @@ ds$Z.var <- 1 / (ds$n - 3)
 # vi: effect size variance
 # data: data set 
 
+jpeg('Forest_5.jpg', width = 610, height = 880)
 forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
 forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
+dev.off()
 
 ##################### Multivariate/Dependency Analyses ##################### 
 
@@ -784,7 +828,7 @@ sensitivity(model_rve_c)
 
 
 # forest plot
-jpeg('Forest_Plot.jpg', width = 610, height = 880)
+jpeg('Forest_Plot_multivariate_5.jpg', width = 610, height = 880)
 forest.robu(model_rve_c,
             es.lab = "rsbtype",
             study.lab = "id")
@@ -845,7 +889,10 @@ options(max.print=1000000)
 influence(RE.model)
 
 # Plots of influence measures
+jpeg('influence_5.jpg', width = 610, height = 880)
 plot(influence(RE.model))
+dev.off()
+
 
 leave1out(RE.model)
 
@@ -856,7 +903,9 @@ leave1out(RE.model)
 par(mfrow = c(1,1))
 
 # Funnel plot w/ SE as vertical axis
+jpeg('funnel_5.jpg', width = 610, height = 880)
 funnel(RE.model)
+dev.off()
 
 # Egger's Regression Test
 regtest(x = ds$Z, vi = ds$Z.var, model = "lm")
@@ -867,9 +916,11 @@ trimfill(RE.model, side = "left", verbose = T)
 
 
 # Plot both versions of trim-and-fill (optional)
-par(mfrow = c(2,1))
+par(mfrow = c(2,1), jpeg('tnf_5.jpg'))
+
 funnel(trimfill(RE.model, side = "right"), main = "Right-Side Imputation")
 funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
+dev.off()
 
 # Fail safe N 
 fsn(yi = Z, vi = Z.var, data = ds)
@@ -940,8 +991,10 @@ ds$Z.var <- 1 / (ds$n - 3)
 # vi: effect size variance
 # data: data set 
 
+jpeg('Forest_6.jpg', width = 610, height = 880)
 forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
 forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
+dev.off()
 
 
 ##################### INDEPENDENT RE MODEL ##################### 
@@ -964,7 +1017,9 @@ options(max.print=1000000)
 influence(RE.model)
 
 # Plots of influence measures
+jpeg('influence_6.jpg', width = 610, height = 880)
 plot(influence(RE.model))
+dev.off()
 
 leave1out(RE.model)
 
@@ -975,7 +1030,10 @@ leave1out(RE.model)
 par(mfrow = c(1,1))
 
 # Funnel plot w/ SE as vertical axis
+jpeg('funnel_6.jpg', width = 610, height = 880)
 funnel(RE.model)
+dev.off()
+
 
 # Egger's Regression Test
 regtest(x = ds$Z, vi = ds$Z.var, model = "lm")
@@ -986,9 +1044,11 @@ trimfill(RE.model, side = "left", verbose = T)
 
 
 # Plot both versions of trim-and-fill (optional)
-par(mfrow = c(2,1))
+par(mfrow = c(2,1), jpeg('tnf_6.jpg'))
+
 funnel(trimfill(RE.model, side = "right"), main = "Right-Side Imputation")
 funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
+dev.off()
 
 # Fail safe N 
 fsn(yi = Z, vi = Z.var, data = ds)
@@ -1032,3 +1092,6 @@ rm(list = ls())
 
 # Normal output
 sink(file = NULL, type = c("output", "message"))
+
+# Re-set WD for some reason 
+setwd("~/git/RSBMeta")

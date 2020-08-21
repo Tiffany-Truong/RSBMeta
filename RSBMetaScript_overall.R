@@ -1,7 +1,22 @@
+#### Run script using command - paste to console
+# source("RSBMetascript_overall.R", echo=TRUE, max.deparse.length=10000)
+
+
+# Clean environment
+rm(list = ls())
+# Clear Console
+cat("\014")
+
 # Load library
 library(metafor)
 library(plotly)
 library(robumeta)
+
+filePath <- "~/git/RSBMeta/Analyses/20-08-2020/Overalloutput.txt"
+
+# Redirect console to a log file
+outputFile <- file(filePath, "w")
+sink(outputFile, append=FALSE, type= c("output", "message"), split = TRUE)
 
 #### Description ####
 # rsbtype
@@ -27,7 +42,7 @@ library(robumeta)
 #### Data Prep #### 
 
 ds = read.csv("/Users/tiffanytruong/git/RSBMeta/Analyses/20-08-2020/dataset.csv", header = T, sep = ",")
-setwd("~/git/RSBMeta")
+setwd("~/git/RSBMeta/Analyses/20-08-2020/Overall")
 
 
 # rsb type subsetting
@@ -47,16 +62,17 @@ ds$Z <- .5*log((1 + ds$r) / (1 - ds$r))
 # Variance of Fisher's Z
 ds$Z.var <- 1 / (ds$n - 3)
 
-
-
-######################### OVERALL ######################### 
-
-#### Overall Forest Plot ####
+####  Forest Plot ####
 
 # Create and print default forest plot
 # yi: effect size
 # vi: effect size variance
 # data: data set 
+
+jpeg('Forest_overall.jpg', width = 610, height = 880)
+forestplot_ds <- rma.uni(yi = Z, vi = Z.var, data = ds)
+forest(forestplot_ds, slab = ds$article, order = order(ds$Z), showweights = TRUE)
+dev.off()
 
 ##################### Multivariate/Dependency Analyses ##################### 
 #### RE model ####
@@ -75,7 +91,7 @@ sensitivity(model_rve_c)
 
 
 # forest plot
-jpeg('Forest_Plot.jpg', width = 610, height = 880)
+jpeg('Forest_Plot_multivariate.jpg', width = 610, height = 880)
 forest.robu(model_rve_c,
             es.lab = "rsbtype",
             study.lab = "id")
@@ -133,7 +149,10 @@ options(max.print=1000000)
 influence(RE.model)
 
 # Plots of influence measures
+jpeg('influence_overall.jpg', width = 610, height = 880)
 plot(influence(RE.model))
+dev.off()
+
 
 leave1out(RE.model)
 
@@ -144,7 +163,10 @@ leave1out(RE.model)
 par(mfrow = c(1,1))
 
 # Funnel plot w/ SE as vertical axis
+jpeg('funnel_overall.jpg', width = 610, height = 880)
 funnel(RE.model)
+dev.off()
+
 
 # Egger's Regression Test
 regtest(x = ds$Z, vi = ds$Z.var, model = "lm")
@@ -155,9 +177,11 @@ trimfill(RE.model, side = "left", verbose = T)
 
 
 # Plot both versions of trim-and-fill (optional)
-par(mfrow = c(2,1))
+par(mfrow = c(2,1), jpeg('tnf_overall.jpg'))
+
 funnel(trimfill(RE.model, side = "right"), main = "Right-Side Imputation")
 funnel(trimfill(RE.model, side = "left"), main = "Left-Side Imputation")
+dev.off()
 
 # Fail safe N 
 fsn(yi = Z, vi = Z.var, data = ds)
@@ -167,4 +191,15 @@ ds$back.transform <- (exp(2*ds$Z) - 1) / (exp(2*ds$Z) + 1)
 
 
 
+
+
+
+#### Clean evironment #### 
+rm(list = ls())
+
+# Normal output
+sink(file = NULL, type = c("output", "message"))
+
+# Re-set WD for some reason 
+setwd("~/git/RSBMeta")
 
